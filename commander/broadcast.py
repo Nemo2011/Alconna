@@ -2,7 +2,7 @@ from typing import List, Callable, Dict, Union, Type, Any
 import re
 from arclet.alconna import Alconna, Arpamar, Default, Option
 from arclet.alconna.types import AnyStr, Bool
-from arclet.alconna.util import split_once
+from arclet.alconna.util import splitOnce
 from graia.broadcast.entities.decorator import Decorator
 from graia.broadcast.interfaces.decorator import DecoratorInterface
 from graia.broadcast.entities.dispatcher import BaseDispatcher
@@ -58,9 +58,9 @@ class AdditionParam(Decorator):
         for param in self.params:
             if re.match(r"^.+{(.+)}", param):
                 if self.default:
-                    opt_list.append(Option(split_once(param, " ")[0], **{key: Default(alc_type, self.default)}))
+                    opt_list.append(Option(splitOnce(param, " ")[0], **{key: Default(alc_type, self.default)}))
                 else:
-                    opt_list.append(Option(split_once(param, " ")[0], **{key: alc_type}))
+                    opt_list.append(Option(splitOnce(param, " ")[0], **{key: alc_type}))
             else:
                 opt_list.append(Option(param))
         return opt_list

@@ -21,13 +21,13 @@ bot = Ariadne(loop=loop, broadcast=bcc,
 
 alc = Alconna(
     command="!test",
-    is_raise_exception=True,
-    help_text="test_dispatch"
+    isRaiseException=True,
+    helpText="test_dispatch"
 )
 
 alc1 = Alconna(
     command="!jrrp",
-    main_args=Args["sth":str:1123]
+    mainArgs=Args["sth":str:1123]
 )
 
 
@@ -36,7 +36,7 @@ ariadne_ctx.set(bot)
 
 @bcc.receiver(
     GroupMessage, dispatchers=[
-        AlconnaDispatcher(alconna=alc, help_flag='post', skip_for_unmatch=True)
+        AlconnaDispatcher(alconna=alc, HELP_FLAG='post', skipForUnmatch=True)
     ]
 )
 async def test(group: Group, result: Arpamar):
@@ -57,7 +57,7 @@ async def test(group: Group, result: Arpamar):
 
 @bcc.receiver(
     GroupMessage, dispatchers=[
-        AlconnaDispatcher(alconna=alc1, help_flag='post')
+        AlconnaDispatcher(alconna=alc1, HELP_FLAG='post')
     ]
 )
 async def test2(group: Group, result: Arpamar):

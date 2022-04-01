@@ -35,8 +35,8 @@ class ArpamarBehaviorInterface:
                 return getattr(self.target, part)
             elif part in self.__changeable__:
                 return getattr(self.target, part)
-            elif part in self.target.main_args:
-                return self.target.main_args
+            elif part in self.target.mainArgs:
+                return self.target.mainArgs
         else:
             _cache = {}
             for part in parts:
@@ -64,7 +64,7 @@ class ArpamarBehaviorInterface:
                     return
             return _cache
 
-    def change_const(self, key: Literal["matched", "head_matched", "error_data", "error_info", "header"], value: Any):
+    def changeConst(self, key: Literal["matched", "head_matched", "error_data", "error_info", "header"], value: Any):
         setattr(self.target, key, value)
 
     def execute(self, behaviors: List[ArpamarBehavior]):

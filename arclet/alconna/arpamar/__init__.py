@@ -23,33 +23,33 @@ class Arpamar:
 
     def __init__(self):
         self.matched: bool = False
-        self.head_matched: bool = False
-        self.error_data: List[Union[str, Any]] = []
-        self.error_info: Optional[Union[str, BaseException]] = None
+        self.headMatched: bool = False
+        self.errorData: List[Union[str, Any]] = []
+        self.errorInfo: Optional[Union[str, BaseException]] = None
         self._options: Dict[str, Any] = {}
         self._subcommands: Dict[str, Any] = {}
-        self._other_args: Dict[str, Any] = {}
+        self._otherArgs: Dict[str, Any] = {}
         self._header: Optional[Union[str, bool]] = None
-        self._main_args: Dict[str, Any] = {}
+        self._mainArgs: Dict[str, Any] = {}
 
         self._cache_args = {}
 
     __slots__ = [
-        "matched", "head_matched", "error_data", "error_info", "_options",
-        "_subcommands", "_other_args", "_header", "_main_args", "_cache_args",
+        "matched", "headMatched", "errorData", "errorInfo", "_options",
+        "_subcommands", "_otherArgs", "_header", "_mainArgs", "_cache_args",
     ]
 
     @property
-    def main_args(self):
+    def mainArgs(self):
         """返回可能解析到的 main arguments"""
-        return self._main_args
+        return self._mainArgs
 
     @property
     def header(self):
         """返回可能解析到的命令头中的信息"""
         if self._header:
             return self._header
-        return self.head_matched
+        return self.headMatched
 
     @property
     def options(self):
@@ -62,20 +62,20 @@ class Arpamar:
         return self._subcommands
 
     @property
-    def all_matched_args(self):
+    def allMatchedArgs(self):
         """返回 Alconna 中所有 Args 解析到的值"""
-        return {**self._main_args, **self._other_args}
+        return {**self._mainArgs, **self._otherArgs}
 
     @property
-    def other_args(self):
+    def otherArgs(self):
         """返回 Alconna 中所有 Option 和 Subcommand 里的 Args 解析到的值"""
-        return self._other_args
+        return self._otherArgs
 
     @property
     def interface(self):
         return self._interface
 
-    def encapsulate_result(
+    def encapsulateResult(
             self,
             header: Union[str, bool, None],
             main_args: Dict[str, Any],
@@ -84,13 +84,13 @@ class Arpamar:
     ) -> None:
         """处理 Arpamar 中的数据"""
         self._header = header
-        self._main_args = main_args
+        self._mainArgs = main_args
         self._options = options
         self._subcommands = subcommands
         for k in options:
             v = options[k]
             if isinstance(v, dict):
-                self._other_args = {**self._other_args, **v}
+                self._otherArgs = {**self._otherArgs, **v}
             elif isinstance(v, list):
                 _rr = {}
                 for i in v:
@@ -102,22 +102,22 @@ class Arpamar:
                         else:
                             _rr[kk].append(vv)
 
-                self._other_args = {**self._other_args, **_rr}
+                self._otherArgs = {**self._otherArgs, **_rr}
         for k, v in subcommands.items():
             if isinstance(v, dict):
                 for kk, vv in v.items():
                     if not isinstance(vv, dict):
-                        self._other_args[kk] = vv
+                        self._otherArgs[kk] = vv
                     else:
                         if not self._options.get(kk):
                             self._options[kk] = vv
                         else:
                             self._options[f"{k}_{kk}"] = vv
                         for kkk, vvv in vv.items():
-                            if not self._other_args.get(kkk):
-                                self._other_args[kkk] = vvv
+                            if not self._otherArgs.get(kkk):
+                                self._otherArgs[kkk] = vvv
                             else:
-                                self._other_args[f"{k}_{kk}_{kkk}"] = vvv
+                                self._otherArgs[f"{k}_{kk}_{kkk}"] = vvv
 
     def get(self, name: Union[str, Type[DataUnit]]) -> Union[Dict, str, DataUnit, None]:
         """根据选项或者子命令的名字返回对应的数据"""
@@ -126,12 +126,12 @@ class Arpamar:
                 return self._options[name]
             if name in self._subcommands:
                 return self._subcommands[name]
-            if name in self._other_args:
-                return self._other_args[name]
-            if name in self._main_args:
-                return self._main_args[name]
+            if name in self._otherArgs:
+                return self._otherArgs[name]
+            if name in self._mainArgs:
+                return self._mainArgs[name]
         else:
-            for _, v in self.all_matched_args.items():
+            for _, v in self.allMatchedArgs.items():
                 if isinstance(v, name):
                     return v
 
@@ -141,7 +141,7 @@ class Arpamar:
             abi.execute(behaviors)
         return self
 
-    def get_first_arg(self, option_name: str) -> Any:
+    def getFirstArg(self, option_name: str) -> Any:
         """根据选项的名字返回第一个参数的值"""
         if option_name in self._options:
             opt_args = self._options[option_name]
@@ -157,14 +157,14 @@ class Arpamar:
     def has(self, name: str) -> bool:
         """判断 Arpamar 是否有对应的选项/子命令的解析结果"""
         return any(
-            [name in self._other_args, name in self._options, name in self._main_args, name in self._subcommands]
+            [name in self._otherArgs, name in self._options, name in self._mainArgs, name in self._subcommands]
         )
 
     def __getitem__(self, item: Union[str, Type[DataUnit]]):
         return self.get(item)
 
     def __getattr__(self, item):
-        r_arg = self.all_matched_args.get(item)
+        r_arg = self.allMatchedArgs.get(item)
         if r_arg and not self._cache_args:
             return r_arg
         if all([item in self._options, item in self._subcommands]):
@@ -202,7 +202,7 @@ class Arpamar:
         return
 
     def __repr__(self):
-        if self.error_info:
+        if self.errorInfo:
             attrs = ((s, getattr(self, s)) for s in ["matched", "head_matched", "error_data", "error_info"])
             return ", ".join([f"{a}={v}" for a, v in attrs if v is not None])
         else:

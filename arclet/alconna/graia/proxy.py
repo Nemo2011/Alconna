@@ -10,8 +10,8 @@ from graia.broadcast.interfaces.dispatcher import DispatcherInterface
 from graia.ariadne.event.message import FriendMessage, GroupMessage, MessageEvent
 from graia.ariadne.message.chain import MessageChain
 from arclet.alconna.arpamar import Arpamar
-from arclet.alconna.proxy import AlconnaMessageProxy, AlconnaProperty, run_always_await
-from arclet.alconna.manager import command_manager
+from arclet.alconna.proxy import AlconnaMessageProxy, AlconnaProperty, runAlwaysAwait
+from arclet.alconna.manager import commandManager
 
 from . import Alconna
 
@@ -50,7 +50,7 @@ class AlconnaHelpMessage(Dispatchable):
 
 
 class GraiaAMP(AlconnaMessageProxy):
-    pre_treatments: Dict[
+    preTreatments: Dict[
         Alconna, Callable[[MessageChain, Arpamar, Optional[str], Optional[MessageEvent]],
                           Coroutine[None, None, AlconnaProperty[MessageChain, MessageEvent]]
         ]
@@ -61,7 +61,7 @@ class GraiaAMP(AlconnaMessageProxy):
         self.skip_for_unmatch = skip_for_unmatch
         super().__init__(broadcast.loop)
 
-        _queue = self.export_results
+        _queue = self.exportResults
 
         @self.broadcast.prelude_dispatchers.append
         class ExportResultDispatcher(BaseDispatcher):
@@ -74,16 +74,16 @@ class GraiaAMP(AlconnaMessageProxy):
 
         @self.broadcast.receiver(FriendMessage, priority=8)
         async def _(event: FriendMessage):
-            await self.push_message(event.messageChain, event)
+            await self.pushMessage(event.messageChain, event)
 
         @self.broadcast.receiver(GroupMessage, priority=8)
         async def _(event: GroupMessage):
-            await self.push_message(event.messageChain, event)
+            await self.pushMessage(event.messageChain, event)
 
-    def add_proxy(
+    def addProxy(
             self,
             command: Union[str, Alconna],
-            pre_treatment: Optional[
+            preTreatment: Optional[
                 Callable[
                     [MessageChain, Arpamar, Optional[str], Optional[MessageEvent]],
                     Coroutine[None, None, AlconnaProperty[MessageChain, MessageEvent]]
@@ -93,7 +93,7 @@ class GraiaAMP(AlconnaMessageProxy):
             help_handler: Optional[Callable[[str], MessageChain]] = None,
     ):
         if isinstance(command, str):
-            command = command_manager.get_command(command)  # type: ignore
+            command = commandManager.getCommand(command)  # type: ignore
             if not command:
                 raise ValueError(f'Command {command} not found')
 
@@ -106,7 +106,7 @@ class GraiaAMP(AlconnaMessageProxy):
             app: Ariadne = get_running()
             if result.matched is False and help_text:
                 if help_flag == "reply":
-                    help_text = await run_always_await(help_handler, help_text)
+                    help_text = await runAlwaysAwait(help_handler, help_text)
                     if isinstance(source, GroupMessage):
                         await app.sendGroupMessage(source.sender.group, help_text)
                     else:
@@ -121,13 +121,13 @@ class GraiaAMP(AlconnaMessageProxy):
                     return AlconnaProperty(origin, result, None, source)
             return AlconnaProperty(origin, result, help_text, source)
 
-        self.pre_treatments.setdefault(command, pre_treatment or reply_help_message)  # type: ignore
+        self.pre_treatments.setdefault(command, preTreatment or reply_help_message)  # type: ignore
 
-    async def fetch_message(self) -> AsyncIterator[Tuple[MessageChain, MessageEvent]]:
+    async def fetchMessage(self) -> AsyncIterator[Tuple[MessageChain, MessageEvent]]:
         pass
 
-    def later_condition(self, result: AlconnaProperty[MessageChain, MessageEvent]) -> bool:
-        if not result.result.matched and not result.help_text:
+    def laterCondition(self, result: AlconnaProperty[MessageChain, MessageEvent]) -> bool:
+        if not result.result.matched and not result.helpText:
             if "-h" in str(result.origin):
                 return False
             if self.skip_for_unmatch:

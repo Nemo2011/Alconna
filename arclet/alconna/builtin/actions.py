@@ -14,49 +14,49 @@ class _StoreValue(ArgAction):
     def __init__(self, value: Any):
         super().__init__(lambda: value)
 
-    def handle(self, option_dict, varargs, kwargs, is_raise_exception):
+    def handle(self, optionDict, varargs, kwargs, isRaiseException):
         return self.action()
 
 
-def store_value(value: Any):
+def storeValue(value: Any):
     """存储一个值"""
     return _StoreValue(value)
 
 
 class HelpAction(ArgAction):
-    help_string_call: Callable
+    helpStringCall: Callable
 
-    def __init__(self, help_call, command=None):
-        super().__init__(HelpActionManager.send_action)
-        self.help_string_call = help_call
+    def __init__(self, helpCall, command=None):
+        super().__init__(HelpActionManager.sendAction)
+        self.helpStringCall = helpCall
         self.command = command
 
-    def handle(self, option_dict, varargs, kwargs, is_raise_exception):
-        action = require_help_send_action(command=self.command)
+    def handle(self, optionDict, varargs, kwargs, isRaiseException):
+        action = requireHelpSendAction(command=self.command)
         if action:
-            return action(self.help_string_call())
+            return action(self.helpStringCall())
 
-    async def handle_async(self, option_dict, varargs, kwargs, is_raise_exception):
-        action = require_help_send_action(command=self.command)
+    async def handleAsync(self, optionDict, varargs, kwargs, isRaiseException):
+        action = requireHelpSendAction(command=self.command)
         if action:
-            return await action(self.help_string_call())
+            return await action(self.helpStringCall())
 
 
 class HelpActionManager(metaclass=Singleton):
     """帮助信息"""
     cache: Dict[str, Callable] = {}
     helpers: Dict[str, HelpAction] = {}
-    send_action: Callable[[str], Union[Any, Coroutine]] = lambda x: print(x)
+    sendAction: Callable[[str], Union[Any, Coroutine]] = lambda x: print(x)
 
 
-def require_help_send_action(action: Optional[Callable[[str], Any]] = None, command: Optional[str] = None):
+def requireHelpSendAction(action: Optional[Callable[[str], Any]] = None, command: Optional[str] = None):
     """修改help_send_action"""
     if action is None:
         if command is None:
-            return HelpActionManager.send_action
+            return HelpActionManager.sendAction
         return HelpActionManager.helpers[command].action
     if command is None:
-        HelpActionManager.send_action = action
+        HelpActionManager.sendAction = action
         for helper in HelpActionManager.helpers.values():
             helper.awaitable = inspect.iscoroutinefunction(action)
     else:
@@ -67,12 +67,12 @@ def require_help_send_action(action: Optional[Callable[[str], Any]] = None, comm
             HelpActionManager.helpers[command].awaitable = inspect.iscoroutinefunction(action)
 
 
-def help_send(command: str, help_string_call: Callable[[], str]):
+def helpSend(command: str, helpStringCall: Callable[[], str]):
     """发送帮助信息"""
     if command not in HelpActionManager.helpers:
-        HelpActionManager.helpers[command] = HelpAction(help_string_call, command)
+        HelpActionManager.helpers[command] = HelpAction(helpStringCall, command)
     else:
-        HelpActionManager.helpers[command].help_string_call = help_string_call
+        HelpActionManager.helpers[command].helpStringCall = helpStringCall
 
     if command in HelpActionManager.cache:
         HelpActionManager.helpers[command].action = HelpActionManager.cache[command]
@@ -93,7 +93,7 @@ if TYPE_CHECKING:
         return _StoreValue(alconna_version)
 
 
-def set_default(value: Any, option: Optional[str] = None, subcommand: Optional[str] = None):
+def setDefault(value: Any, option: Optional[str] = None, subcommand: Optional[str] = None):
     """
     设置一个选项的默认值, 在无该选项时会被设置
 
@@ -130,7 +130,7 @@ def exclusion(target_path: str, other_path: str):
     return _EXCLUSION()
 
 
-def cool_down(seconds: float):
+def coolDown(seconds: float):
     """
     当设置的时间间隔内被调用时, 抛出异常
     """
@@ -142,8 +142,8 @@ def cool_down(seconds: float):
         def operate(self, interface: "ArpamarBehaviorInterface"):
             current_time = datetime.now()
             if (current_time - self.last_time).total_seconds() < seconds:
-                interface.change_const("matched", False)
-                interface.change_const("error_info", OutBoundsBehavior("操作过于频繁"))
+                interface.changeConst("matched", False)
+                interface.changeConst("error_info", OutBoundsBehavior("操作过于频繁"))
             else:
                 self.last_time = current_time
 

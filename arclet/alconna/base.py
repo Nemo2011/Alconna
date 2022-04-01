@@ -8,7 +8,7 @@ from typing import Union, Tuple, Type, Dict, Iterable, Callable, Any, Optional, 
 from .exceptions import InvalidParam, NullTextMessage
 from .types import (
     ArgPattern,
-    _AnyParam, Empty, DataUnit, AllParam, AnyParam, MultiArg, AntiArg, UnionArg, argtype_validator, TypePattern
+    _AnyParam, Empty, DataUnit, AllParam, AnyParam, MultiArg, AntiArg, UnionArg, argumentTypeValidator, TypePattern
 )
 
 TAValue = Union[ArgPattern, TypePattern, Type[DataUnit], _AnyParam]
@@ -56,7 +56,7 @@ class ArgsMeta(type):
                 args.__setitem__(cls.last_key, items)
                 cls.selecting = False
             else:
-                args.__check_vars__(items)
+                args.__checkVars__(items)
         return args
 
 
@@ -69,18 +69,18 @@ class Args(metaclass=ArgsMeta):  # type: ignore
     """
     extra: Literal["allow", "ignore", "reject"]
     argument: Dict[str, ArgUnit]
-    var_positional: Optional[Tuple[str, MultiArg]]
-    var_keyword: Optional[Tuple[str, MultiArg]]
-    optional_count: int
+    varPositional: Optional[Tuple[str, MultiArg]]
+    varKeyword: Optional[Tuple[str, MultiArg]]
+    optionalCount: int
 
     @classmethod
-    def from_string_list(cls, args: List[List[str]], custom_types: Dict) -> "Args":
+    def fromStringList(cls, args: List[List[str]], customTypes: Dict) -> "Args":
         """
         从处理好的字符串列表中生成Args
 
         Args:
             args: 字符串列表
-            custom_types: 自定义的类型
+            customTypes: 自定义的类型
 
         Example:
             Args.from_string_list([["foo", "str"], ["bar", "digit", "123"]], {"digit":int})
@@ -96,17 +96,17 @@ class Args(metaclass=ArgsMeta):  # type: ignore
             name = arg[0].replace("...", "")
 
             if not isinstance(value, AnyParam.__class__):
-                if custom_types and custom_types.get(value) and not inspect.isclass(custom_types[value]):
-                    raise InvalidParam(f"自定义参数类型传入的不是类型而是 {custom_types[value]}, 这是有意而为之的吗?")
+                if customTypes and customTypes.get(value) and not inspect.isclass(customTypes[value]):
+                    raise InvalidParam(f"自定义参数类型传入的不是类型而是 {customTypes[value]}, 这是有意而为之的吗?")
                 try:
-                    value = eval(value, custom_types)
+                    value = eval(value, customTypes)
                 except NameError:
                     pass
             _args.__merge__([name, value, default])
         return _args
 
     @classmethod
-    def from_callable(cls, target: Callable, extra: Literal["allow", "ignore", "reject"] = "allow"):
+    def fromCallable(cls, target: Callable, extra: Literal["allow", "ignore", "reject"] = "allow"):
         """
         从方法中构造Args
         """
@@ -147,14 +147,14 @@ class Args(metaclass=ArgsMeta):  # type: ignore
             kwargs: 传入key与value; default需要另外传入
         """
         self.extra = extra
-        self.var_positional = None
-        self.var_keyword = None
-        self.optional_count = 0
+        self.varPositional = None
+        self.varKeyword = None
+        self.optionalCount = 0
         self.argument = {  # type: ignore
-            k: {"value": argtype_validator(v), "default": None, 'optional': False, 'hidden': False, 'kwonly': False}
+            k: {"value": argumentTypeValidator(v), "default": None, 'optional': False, 'hidden': False, 'kwonly': False}
             for k, v in kwargs.items()
         }
-        self.__check_vars__(args or [])
+        self.__checkVars__(args or [])
 
     __ignore__ = "extra", "var_positional", "var_keyword", "argument", "optional_count"
 
@@ -165,7 +165,7 @@ class Args(metaclass=ArgsMeta):  # type: ignore
                 self.argument[k]['default'] = v
         return self
 
-    def __check_vars__(self, args: Iterable[Union[slice, Sequence]]):
+    def __checkVars__(self, args: Iterable[Union[slice, Sequence]]):
         for sl in args:
             if isinstance(sl, slice):
                 name, value, default = sl.start, sl.stop, sl.step
@@ -176,7 +176,7 @@ class Args(metaclass=ArgsMeta):  # type: ignore
             if name == "":
                 raise InvalidParam("该参数的指示名不能为空")
             if not name.startswith("#"):
-                _value = argtype_validator(value, self.extra)
+                _value = argumentTypeValidator(value, self.extra)
             else:
                 name = name.lstrip("#")
                 _value = value if not isinstance(value, str) else ArgPattern(value)
@@ -189,18 +189,18 @@ class Args(metaclass=ArgsMeta):  # type: ignore
                     _value = UnionArg(_value, anti=name.startswith("!"))
             if name.startswith("**"):
                 name = name.lstrip("**").replace("@", "").replace("?", "")
-                if self.var_keyword:
+                if self.varKeyword:
                     raise InvalidParam("不能同时设置多个键值对可变参数")
                 if not isinstance(_value, (_AnyParam, UnionArg)):
                     _value = MultiArg(_value, flag='kwargs')
-                    self.var_keyword = (name, _value)
+                    self.varKeyword = (name, _value)
             elif name.startswith("*"):
                 name = name.lstrip("*").replace("@", "").replace("?", "")
-                if self.var_positional:
+                if self.varPositional:
                     raise InvalidParam("不能同时设置多个非键值对可变参数")
                 if not isinstance(_value, (_AnyParam, UnionArg)):
                     _value = MultiArg(_value)
-                    self.var_positional = (name, _value)
+                    self.varPositional = (name, _value)
             elif name.startswith("!"):
                 name = name.lstrip("!")
                 if not isinstance(_value, (_AnyParam, UnionArg)):
@@ -213,7 +213,7 @@ class Args(metaclass=ArgsMeta):  # type: ignore
             if "?" in name:
                 name = name.replace("?", "")
                 _addition['optional'] = True
-                self.optional_count += 1
+                self.optionalCount += 1
             if "@" in name:
                 name = name.replace("@", "")
                 _addition['kwonly'] = True
@@ -234,9 +234,9 @@ class Args(metaclass=ArgsMeta):  # type: ignore
             super().__setattr__(key, value)
         elif isinstance(value, Iterable):
             values = list(value)
-            self.__check_vars__([(key, values[0], values[1])])
+            self.__checkVars__([(key, values[0], values[1])])
         else:
-            self.__check_vars__([(key, value)])
+            self.__checkVars__([(key, value)])
         return self
 
     def __getitem__(self, item) -> Union["Args", Tuple[TAValue, TADefault]]:
@@ -247,14 +247,14 @@ class Args(metaclass=ArgsMeta):  # type: ignore
                 raise KeyError(f"{item} 不存在")
         if isinstance(item, slice):
             slices = [item]
-            self.__check_vars__(slices)
+            self.__checkVars__(slices)
         elif isinstance(item, Iterable):
             slices = list(filter(lambda x: isinstance(x, slice), item))
             items = list(filter(lambda x: isinstance(x, Sequence), item))
             items += list(map(lambda x: (x,), filter(lambda x: isinstance(x, str), item)))
             if items:
-                self.__check_vars__(items)
-            self.__check_vars__(slices)
+                self.__checkVars__(items)
+            self.__checkVars__(slices)
         return self
 
     def __merge__(self, other) -> "Args":
@@ -284,9 +284,9 @@ class Args(metaclass=ArgsMeta):  # type: ignore
         return repr_string.format(repr_args)
 
     def __getstate__(self):
-        return self.to_dict()
+        return self.toDict()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def toDict(self) -> Dict[str, Any]:
         args = {}
         for k, v in self.argument.items():
             value = v['value']
@@ -301,14 +301,14 @@ class Args(metaclass=ArgsMeta):  # type: ignore
         return {"argument": args, "extra": self.extra}
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]):
+    def fromDict(cls, data: Dict[str, Any]):
         args = cls(extra=data['extra'])
         for k, v in data['argument'].items():
             value = v.pop('value')
             default = v.pop('default')
             v_type = value.get("type")
             if v_type == "ArgPattern":
-                value = ArgPattern.from_dict(value)
+                value = ArgPattern.fromDict(value)
             elif v_type == "AnyParam":
                 value = AnyParam
             elif v_type == "AllParam":
@@ -320,14 +320,14 @@ class Args(metaclass=ArgsMeta):  # type: ignore
 
     def __setstate__(self, state):
         self.extra = state["extra"]
-        self.var_positional = None
-        self.var_keyword = None
+        self.varPositional = None
+        self.varKeyword = None
         for k, v in state['argument'].items():
             value = v.pop('value')
             default = v.pop('default')
             v_type = value.get("type")
             if v_type == "ArgPattern":
-                value = ArgPattern.from_dict(value)
+                value = ArgPattern.fromDict(value)
             elif v_type == "AnyParam":
                 value = AnyParam
             elif v_type == "AllParam":
@@ -359,49 +359,49 @@ class ArgAction:
 
     def handle(
             self,
-            option_dict: dict,
+            optionDict: dict,
             varargs: List,
             kwargs: Dict,
-            is_raise_exception: bool
+            isRaiseException: bool
     ):
         try:
-            additional_values = self.action(*option_dict.values(), *varargs, **kwargs)
+            additional_values = self.action(*optionDict.values(), *varargs, **kwargs)
             if additional_values is None:
-                return option_dict
+                return optionDict
             if not isinstance(additional_values, Sequence):
-                option_dict['result'] = additional_values
-                return option_dict
-            for i, k in enumerate(option_dict.keys()):
+                optionDict['result'] = additional_values
+                return optionDict
+            for i, k in enumerate(optionDict.keys()):
                 if i == len(additional_values):
                     break
-                option_dict[k] = additional_values[i]
+                optionDict[k] = additional_values[i]
         except Exception as e:
-            if is_raise_exception:
+            if isRaiseException:
                 raise e
-        return option_dict
+        return optionDict
 
-    async def handle_async(
+    async def handleAsync(
             self,
-            option_dict: dict,
+            optionDict: dict,
             varargs: List,
             kwargs: Dict,
-            is_raise_exception: bool
+            isRaiseException: bool
     ):
         try:
-            additional_values = await self.action(*option_dict.values(), *varargs, **kwargs)
+            additional_values = await self.action(*optionDict.values(), *varargs, **kwargs)
             if additional_values is None:
-                return option_dict
+                return optionDict
             if not isinstance(additional_values, Sequence):
-                option_dict['result'] = additional_values
-                return option_dict
-            for i, k in enumerate(option_dict.keys()):
+                optionDict['result'] = additional_values
+                return optionDict
+            for i, k in enumerate(optionDict.keys()):
                 if i == len(additional_values):
                     break
-                option_dict[k] = additional_values[i]
+                optionDict[k] = additional_values[i]
         except Exception as e:
-            if is_raise_exception:
+            if isRaiseException:
                 raise e
-        return option_dict
+        return optionDict
 
 
 class CommandNode:
@@ -413,20 +413,20 @@ class CommandNode:
         args: 命令参数
         separator: 命令分隔符
         action: 命令动作
-        help_text: 命令帮助信息
+        helpText: 命令帮助信息
     """
     name: str
     args: Args
     separator: str
     action: ArgAction
-    help_text: str
+    helpText: str
 
     def __init__(
             self, name: str,
             args: Union[Args, str, None] = None,
             action: Optional[Union[ArgAction, Callable]] = None,
             separator: Optional[str] = None,
-            help_text: Optional[str] = None,
+            helpText: Optional[str] = None,
     ):
         """
         初始化命令体
@@ -444,14 +444,14 @@ class CommandNode:
         if args is None:
             self.args = Args()
         elif isinstance(args, str):
-            self.args = Args.from_string_list(
+            self.args = Args.fromStringList(
                 [re.split("[:|=]", p) for p in re.split(r"\s*,\s*", args)], {}
             )
         else:
             self.args = args
-        self.__check_action__(action)
+        self.__checkAction__(action)
         self.separator = separator or " "
-        self.help_text = help_text or self.name
+        self.helpText = helpText or self.name
         self.nargs = len(self.args.argument)
 
     nargs: int
@@ -466,13 +466,13 @@ class CommandNode:
         self.separator = separator
         return self
 
-    def __check_action__(self, action):
+    def __checkAction__(self, action):
         if action:
             if isinstance(action, ArgAction):
                 self.action = action
                 return
             if len(self.args.argument) == 0:
-                self.args, _ = Args.from_callable(action)
+                self.args, _ = Args.fromCallable(action)
                 self.action = ArgAction(action)
             else:
                 argument = [
@@ -491,8 +491,8 @@ class CommandNode:
                         if isinstance(
                                 value, ArgPattern
                         ):
-                            if value.origin_type != getattr(anno, "__origin__", anno):
-                                raise InvalidParam(f"{argument[i][0]}的类型 与 Args 中 '{k}' 接受的类型 {value.origin_type} 不一致")
+                            if value.originType != getattr(anno, "__origin__", anno):
+                                raise InvalidParam(f"{argument[i][0]}的类型 与 Args 中 '{k}' 接受的类型 {value.originType} 不一致")
                         elif isinstance(
                                 value, _AnyParam
                         ):
@@ -512,26 +512,26 @@ class CommandNode:
     def __repr__(self):
         return f"<{self.name} args={self.args}>"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def toDict(self) -> Dict[str, Any]:
         return {
             "type": self.__class__.__name__,
             "name": self.name,
-            "args": self.args.to_dict(),
+            "args": self.args.toDict(),
             "separator": self.separator,
-            "help_text": self.help_text,
+            "help_text": self.helpText,
         }
 
     def __getstate__(self):
-        return self.to_dict()
+        return self.toDict()
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]):
+    def fromDict(cls, data: Dict[str, Any]):
         name = data['name']
-        args = Args.from_dict(data['args'])
-        cmd = cls(name, args, separator=data['separator'], help_text=data['help_text'])
+        args = Args.fromDict(data['args'])
+        cmd = cls(name, args, separator=data['separator'], helpText=data['help_text'])
         return cmd
 
     def __setstate__(self, state):
         self.__init__(
-            state['name'], Args.from_dict(state['args']), separator=state['separator'], help_text=state['help_text']
+            state['name'], Args.fromDict(state['args']), separator=state['separator'], helpText=state['help_text']
         )

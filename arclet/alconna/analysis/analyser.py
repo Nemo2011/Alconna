@@ -7,7 +7,7 @@ from arclet.alconna import NullTextMessage, UnexpectedElement
 from ..base import Args
 from ..component import Option, Subcommand
 from ..arpamar import Arpamar
-from ..util import split_once, split
+from ..util import splitOnce, split
 from ..types import DataUnit, ArgPattern, DataCollection
 
 if TYPE_CHECKING:
@@ -19,55 +19,55 @@ class Analyser(metaclass=ABCMeta):
     Alconna使用的分析器基类, 实现了一些通用的方法
 
     Attributes:
-        current_index(int): 记录解析时当前数据的index
-        content_index(int): 记录内部index
-        head_matched: 是否匹配了命令头部
+        currentIndex(int): 记录解析时当前数据的index
+        contentIndex(int): 记录内部index
+        headMatched: 是否匹配了命令头部
     """
     alconna: 'Alconna'  # Alconna实例
-    current_index: int  # 当前数据的index
-    content_index: int  # 内部index
-    is_str: bool  # 是否是字符串
-    raw_data: Dict[int, Union[List[str], Any]]  # 原始数据
+    currentIndex: int  # 当前数据的index
+    contentIndex: int  # 内部index
+    isStringOnly: bool  # 是否是字符串
+    rawData: Dict[int, Union[List[str], Any]]  # 原始数据
     ndata: int  # 原始数据的长度
-    command_params: Dict[str, Union[Option, Subcommand]]  # 参数
-    param_ids: List[str]
+    commandParams: Dict[str, Union[Option, Subcommand]]  # 参数
+    paramIds: List[str]
     # 命令头部
-    command_header: Union[
+    commandHeader: Union[
         ArgPattern,
         Tuple[Union[Tuple[List[Any], ArgPattern], List[Any]], ArgPattern],
         List[Tuple[Any, ArgPattern]]
     ]
     separator: str  # 分隔符
-    is_raise_exception: bool  # 是否抛出异常
+    isRaiseException: bool  # 是否抛出异常
     options: Dict[str, Any]  # 存放解析到的所有选项
     subcommands: Dict[str, Any]  # 存放解析到的所有子命令
-    main_args: Dict[str, Any]  # 主参数
+    mainArgs: Dict[str, Any]  # 主参数
     header: Optional[Union[str, bool]]  # 命令头部
-    need_main_args: bool  # 是否需要主参数
-    head_matched: bool  # 是否匹配了命令头部
-    part_len: range  # 分段长度
-    default_main_only: bool  # 默认只有主参数
-    self_args: Args  # 自身参数
+    isNeedMainArgs: bool  # 是否需要主参数
+    headMatched: bool  # 是否匹配了命令头部
+    partLength: range  # 分段长度
+    isMainArgsDefaultOnly: bool  # 默认只有主参数
+    selfArgs: Args  # 自身参数
     ARGHANDLER_TYPE = Callable[["Analyser", Union[str, DataUnit], str, Type, Any, int, str, Dict[str, Any], bool], Any]
-    arg_handlers: Dict[Type, ARGHANDLER_TYPE]
-    filter_out: List[str]  # 元素黑名单
+    argHandlers: Dict[Type, ARGHANDLER_TYPE]
+    filterOut: List[str]  # 元素黑名单
 
     def __init_subclass__(cls, **kwargs):
-        cls.arg_handlers = {}
+        cls.argHandlers = {}
         for base in reversed(cls.__bases__):
             if issubclass(base, Analyser):
-                cls.arg_handlers.update(getattr(base, "arg_handlers", {}))
+                cls.argHandlers.update(getattr(base, "arg_handlers", {}))
         if not hasattr(cls, "filter_out"):
             raise TypeError("Analyser subclass must define filter_out")
 
     @classmethod
-    def add_arg_handler(cls, arg_type: Type, handler: Optional[ARGHANDLER_TYPE] = None):
+    def addArgHandler(cls, arg_type: Type, handler: Optional[ARGHANDLER_TYPE] = None):
         if handler:
-            cls.arg_handlers[arg_type] = handler
+            cls.argHandlers[arg_type] = handler
             return handler
 
         def __wrapper(func):
-            cls.arg_handlers[arg_type] = func
+            cls.argHandlers[arg_type] = func
             return func
 
         return __wrapper
@@ -75,36 +75,36 @@ class Analyser(metaclass=ABCMeta):
     def __init__(self, alconna: "Alconna"):
         self.reset()
         self.alconna = alconna
-        self.self_args = alconna.args
+        self.selfArgs = alconna.args
         self.separator = alconna.separator
-        self.is_raise_exception = alconna.is_raise_exception
-        self.need_main_args = False
-        self.default_main_only = False
-        self.__handle_main_args__(alconna.args, alconna.nargs)
-        self.__init_header__(alconna.command, alconna.headers)
+        self.isRaiseException = alconna.isRaiseException
+        self.isNeedMainArgs = False
+        self.isMainArgsDefaultOnly = False
+        self.__handleMainArgs__(alconna.args, alconna.nargs)
+        self.__initHeader__(alconna.command, alconna.headers)
 
-    def __handle_main_args__(self, main_args: Args, nargs: Optional[int] = None):
-        nargs = nargs or len(main_args)
-        if nargs > 0 and nargs > main_args.optional_count:
-            self.need_main_args = True  # 如果need_marg那么match的元素里一定得有main_argument
+    def __handleMainArgs__(self, mainArgs: Args, nargs: Optional[int] = None):
+        nargs = nargs or len(mainArgs)
+        if nargs > 0 and nargs > mainArgs.optionalCount:
+            self.isNeedMainArgs = True  # 如果need_marg那么match的元素里一定得有main_argument
         _de_count = 0
-        for k, a in main_args.argument.items():
+        for k, a in mainArgs.argument.items():
             if a['default'] is not None:
                 _de_count += 1
         if _de_count and _de_count == nargs:
-            self.default_main_only = True
+            self.isMainArgsDefaultOnly = True
 
-    def __init_header__(
+    def __initHeader__(
             self,
-            command_name: str,
+            commandName: str,
             headers: Union[List[Union[str, DataUnit]], List[Tuple[DataUnit, str]]]
     ):
         if headers != [""]:
             if isinstance(headers[0], tuple):
                 mixins = []
                 for h in headers:  
-                    mixins.append((h[0], ArgPattern(re.escape(h[1]) + command_name)))  # type: ignore
-                self.command_header = mixins
+                    mixins.append((h[0], ArgPattern(re.escape(h[1]) + commandName)))  # type: ignore
+                self.commandHeader = mixins
             else:
                 elements = []
                 ch_text = ""
@@ -114,33 +114,31 @@ class Analyser(metaclass=ABCMeta):
                     else:
                         elements.append(h)
                 if not elements:
-                    self.command_header = ArgPattern("(?:{})".format(ch_text[:-1]) + command_name)
+                    self.commandHeader = ArgPattern("(?:{})".format(ch_text[:-1]) + commandName)
                 elif not ch_text:
-                    self.command_header = (elements, ArgPattern(command_name))
+                    self.commandHeader = (elements, ArgPattern(commandName))
                 else:
-                    self.command_header = (
-                        (elements, ArgPattern("(?:{})".format(ch_text[:-1]))), ArgPattern(command_name)
+                    self.commandHeader = (
+                        (elements, ArgPattern("(?:{})".format(ch_text[:-1]))), ArgPattern(commandName)
                     )
         else:
-            self.command_header = ArgPattern(command_name)
+            self.commandHeader = ArgPattern(commandName)
 
     @staticmethod
-    def default_params_generator(analyser: "Analyser"):
-        analyser.param_ids = []
-        analyser.command_params = {}  # "main_args": analyser.alconna.args
+    def defaultParamsGenerator(analyser: "Analyser"):
+        analyser.paramIds = []
+        analyser.commandParams = {}
         for opts in analyser.alconna.options:
             if isinstance(opts, Subcommand):
-                analyser.param_ids.append(opts.name)
-                # opts.sub_params.setdefault('sub_args', opts.args)
+                analyser.paramIds.append(opts.name)
                 for sub_opts in opts.options:
-                    opts.sub_params.setdefault(sub_opts.name, sub_opts)
-                    analyser.param_ids.extend(sub_opts.aliases)
-                # opts.sub_part_len = range(len(opts.options) + opts.nargs)
-                opts.sub_part_len = range(len(opts.options) + 1)
+                    opts.subParams.setdefault(sub_opts.name, sub_opts)
+                    analyser.paramIds.extend(sub_opts.aliases)
+                opts.subPartLength = range(len(opts.options) + 1)
             else:
-                analyser.param_ids.extend(opts.aliases)
-            analyser.command_params[opts.name] = opts
-        analyser.part_len = range(len(analyser.command_params) + 1)
+                analyser.paramIds.extend(opts.aliases)
+            analyser.commandParams[opts.name] = opts
+        analyser.partLength = range(len(analyser.commandParams) + 1)
 
     def __repr__(self):
         return f"<{self.__class__.__name__}>"
@@ -150,48 +148,48 @@ class Analyser(metaclass=ABCMeta):
 
     def reset(self):
         """重置分析器"""
-        self.current_index = 0
-        self.content_index = 0
-        self.is_str = False
+        self.currentIndex = 0
+        self.contentIndex = 0
+        self.isStringOnly = False
         self.options = {}
-        self.main_args = {}
+        self.mainArgs = {}
         self.subcommands = {}
         self.header = None
-        self.raw_data = {}
-        self.head_matched = False
+        self.rawData = {}
+        self.headMatched = False
         self.ndata = 0
 
-    def next_data(self, separate: Optional[str] = None, pop: bool = True) -> Tuple[Union[str, Any], bool]:
+    def getNextData(self, separate: Optional[str] = None, pop: bool = True) -> Tuple[Union[str, Any], bool]:
         """获取解析需要的下个数据"""
-        if self.current_index == self.ndata:
+        if self.currentIndex == self.ndata:
             return "", True
-        _current_data = self.raw_data[self.current_index]
+        _current_data = self.rawData[self.currentIndex]
         if isinstance(_current_data, list):
             _rest_text: str = ""
-            _text = _current_data[self.content_index]
+            _text = _current_data[self.contentIndex]
             if separate and separate != self.separator:
-                _text, _rest_text = split_once(_text, separate)
+                _text, _rest_text = splitOnce(_text, separate)
             if pop:
                 if _rest_text:  # 这里实际上还是pop了
-                    self.raw_data[self.current_index][self.content_index] = _rest_text
+                    self.rawData[self.currentIndex][self.contentIndex] = _rest_text
                 else:
-                    self.content_index += 1
-            if len(_current_data) == self.content_index:
-                self.current_index += 1
-                self.content_index = 0
+                    self.contentIndex += 1
+            if len(_current_data) == self.contentIndex:
+                self.currentIndex += 1
+                self.contentIndex = 0
             return _text, True
         if pop:
-            self.current_index += 1
+            self.currentIndex += 1
         return _current_data, False
 
-    def rest_count(self, separate: Optional[str] = None) -> int:
+    def getRestDataCount(self, separate: Optional[str] = None) -> int:
         """获取剩余的数据个数"""
         _result = 0
-        for i in self.raw_data:
-            if i < self.current_index:
+        for i in self.rawData:
+            if i < self.currentIndex:
                 continue
-            if isinstance(self.raw_data[i], list):
-                for s in self.raw_data[i][self.content_index:]:
+            if isinstance(self.rawData[i], list):
+                for s in self.rawData[i][self.contentIndex:]:
                     if separate and self.separator != separate:
                         _result += len(split(s, separate))
                     _result += 1
@@ -199,44 +197,44 @@ class Analyser(metaclass=ABCMeta):
                 _result += 1
         return _result
 
-    def reduce_data(self, data: Union[str, Any]):
+    def reduceData(self, data: Union[str, Any]):
         """把pop的数据放回 (实际只是‘指针’移动)"""
         if not data:
             return
-        if self.current_index == self.ndata:
-            self.current_index -= 1
+        if self.currentIndex == self.ndata:
+            self.currentIndex -= 1
             if isinstance(data, str):
-                self.content_index = len(self.raw_data[self.current_index]) - 1
+                self.contentIndex = len(self.rawData[self.currentIndex]) - 1
         else:
-            _current_data = self.raw_data[self.current_index]
+            _current_data = self.rawData[self.currentIndex]
             if isinstance(_current_data, list) and isinstance(data, str):
-                self.content_index -= 1
+                self.contentIndex -= 1
             else:
-                self.current_index -= 1
+                self.currentIndex -= 1
 
-    def recover_raw_data(self) -> List[Union[str, Any]]:
+    def recoverRawData(self) -> List[Union[str, Any]]:
         """将处理过的命令数据大概还原"""
         _result = []
-        for i in self.raw_data:
-            if i < self.current_index:
+        for i in self.rawData:
+            if i < self.currentIndex:
                 continue
-            if isinstance(self.raw_data[i], list):
-                _result.append(f'{self.separator}'.join(self.raw_data[i][self.content_index:]))
+            if isinstance(self.rawData[i], list):
+                _result.append(f'{self.separator}'.join(self.rawData[i][self.contentIndex:]))
             else:
-                _result.append(self.raw_data[i])
-        self.current_index = self.ndata
-        self.content_index = 0
+                _result.append(self.rawData[i])
+        self.currentIndex = self.ndata
+        self.contentIndex = 0
         return _result
 
-    def handle_message(self, data: Union[str, DataCollection]) -> Optional[Arpamar]:
+    def handleMessage(self, data: Union[str, DataCollection]) -> Optional[Arpamar]:
         """命令分析功能, 传入字符串或消息链, 应当在失败时返回fail的arpamar"""
         if isinstance(data, str):
-            self.is_str = True
+            self.isStringOnly = True
             if not (res := split(data.lstrip(), self.separator)):
-                if self.is_raise_exception:
+                if self.isRaiseException:
                     raise NullTextMessage("传入了空的字符串")
-                return self.create_arpamar(fail=True, exception=NullTextMessage("传入了空的字符串"))
-            self.raw_data = {0: res}
+                return self.createArpamar(fail=True, exception=NullTextMessage("传入了空的字符串"))
+            self.rawData = {0: res}
             self.ndata = 1
         else:
             separate = self.separator
@@ -253,22 +251,22 @@ class Analyser(metaclass=ABCMeta):
                         continue
                     raw_data[i] = res
                     __t = True
-                elif unit.__class__.__name__ not in self.filter_out:
+                elif unit.__class__.__name__ not in self.filterOut:
                     raw_data[i] = unit
                 else:
-                    if self.is_raise_exception:
+                    if self.isRaiseException:
                         exc = UnexpectedElement(f"{unit.type}({unit})")
                     continue
                 i += 1
             if __t is False:
-                if self.is_raise_exception:
+                if self.isRaiseException:
                     raise NullTextMessage("传入了一个无法获取文本的消息链")
-                return self.create_arpamar(fail=True, exception=NullTextMessage("传入了一个无法获取文本的消息链"))
+                return self.createArpamar(fail=True, exception=NullTextMessage("传入了一个无法获取文本的消息链"))
             if exc:
-                if self.is_raise_exception:
+                if self.isRaiseException:
                     raise exc
-                return self.create_arpamar(fail=True, exception=exc)
-            self.raw_data = raw_data
+                return self.createArpamar(fail=True, exception=exc)
+            self.rawData = raw_data
             self.ndata = i
 
     @abstractmethod
@@ -277,11 +275,11 @@ class Analyser(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def create_arpamar(self, exception: Optional[BaseException] = None, fail: bool = False) -> Arpamar:
+    def createArpamar(self, exception: Optional[BaseException] = None, fail: bool = False) -> Arpamar:
         """创建arpamar, 其一定是一次解析的最后部分"""
         pass
 
     @abstractmethod
-    def add_param(self, opt):
+    def addParam(self, opt):
         """临时增加解析用参数"""
         pass

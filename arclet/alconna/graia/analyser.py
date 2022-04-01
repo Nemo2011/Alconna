@@ -8,14 +8,14 @@ from arclet.alconna.types import (
 )
 from arclet.alconna.visitor import AlconnaNodeVisitor
 from arclet.alconna.analysis.analyser import Analyser
-from arclet.alconna.manager import command_manager
+from arclet.alconna.manager import commandManager
 from arclet.alconna.analysis.arg_handlers import (
-    multi_arg_handler, common_arg_handler, anti_arg_handler, union_arg_handler
+    multiArgHandler, commonArgHandler, antiArgHandler, unionArgHandler
 )
-from arclet.alconna.analysis.parts import analyse_args, analyse_option, analyse_subcommand, analyse_header
+from arclet.alconna.analysis.parts import analyseArgs, analyseOption, analyseSubcommand, analyseHeader
 from arclet.alconna.exceptions import ParamsUnmatched, ArgumentMissing, NullTextMessage, UnexpectedElement
 from arclet.alconna.util import split
-from arclet.alconna.builtin.actions import help_send
+from arclet.alconna.builtin.actions import helpSend
 
 from graia.ariadne.message.chain import MessageChain
 from graia.ariadne.message.element import Plain
@@ -31,13 +31,13 @@ class GraiaCommandAnalyser(Analyser):
 
     filter_out = ["Source", "File", "Quote"]
 
-    def add_param(self, opt: Union[Option, Subcommand]):
+    def addParam(self, opt: Union[Option, Subcommand]):
         if isinstance(opt, Subcommand):
             for sub_opts in opt.options:
-                opt.sub_params.setdefault(sub_opts.name, sub_opts)
-        self.command_params[opt.name] = opt
+                opt.subParams.setdefault(sub_opts.name, sub_opts)
+        self.commandParams[opt.name] = opt
 
-    def handle_message(self, data: MessageChain) -> Optional[Arpamar]:
+    def handleMessage(self, data: MessageChain) -> Optional[Arpamar]:
         """命令分析功能, 传入字符串或消息链, 应当在失败时返回fail的arpamar"""
         separate = self.separator
         i, __t, exc = 0, False, None
@@ -65,83 +65,83 @@ class GraiaCommandAnalyser(Analyser):
             elif unit.type not in self.filter_out:
                 raw_data[i] = unit
             else:
-                if self.is_raise_exception:
+                if self.isRaiseException:
                     exc = UnexpectedElement(f"{unit.type}({unit})")
                 continue
             i += 1
 
         if __t is False:
-            if self.is_raise_exception:
+            if self.isRaiseException:
                 raise NullTextMessage("传入了一个无法获取文本的消息链")
-            return self.create_arpamar(fail=True, exception=NullTextMessage("传入了一个无法获取文本的消息链"))
+            return self.createArpamar(fail=True, exception=NullTextMessage("传入了一个无法获取文本的消息链"))
         if exc:
-            if self.is_raise_exception:
+            if self.isRaiseException:
                 raise exc
-            return self.create_arpamar(fail=True, exception=exc)
+            return self.createArpamar(fail=True, exception=exc)
         self.raw_data = raw_data
         self.ndata = i
 
     def analyse(self, message: Union[MessageChain, None] = None) -> Arpamar:
-        if command_manager.is_disable(self.alconna):
-            return self.create_arpamar(fail=True)
+        if commandManager.isDisable(self.alconna):
+            return self.createArpamar(fail=True)
         if self.ndata == 0:
             if not message:
                 raise ValueError('No data to analyse')
-            if r := self.handle_message(message):
+            if r := self.handleMessage(message):
                 return r
         try:
-            self.header = analyse_header(self)
+            self.header = analyseHeader(self)
         except ParamsUnmatched as e:
             self.current_index = 0
             self.content_index = 0
             try:
-                _, cmd, reserve = command_manager.find_shortcut(
-                    self.alconna, self.next_data(self.alconna.separator, pop=False)[0]
+                _, cmd, reserve = commandManager.findShortcut(
+                    self.alconna, self.getNextData(self.alconna.separator, pop=False)[0]
                 )
                 if reserve:
-                    data = self.recover_raw_data()
+                    data = self.recoverRawData()
                     data[0] = cmd
                     self.reset()
                     return self.analyse(data)  # type: ignore
                 self.reset()
                 return self.analyse(MessageChain.create(cmd))
             except ValueError:
-                return self.create_arpamar(fail=True, exception=e)
+                return self.createArpamar(fail=True, exception=e)
 
-        for _ in self.part_len:
-            _text, _str = self.next_data(self.separator, pop=False)
-            if not (_param := self.command_params.get(_text, None) if _str else Ellipsis) and _text != "":
-                for p in self.command_params:
-                    if _text.split(self.command_params[p].separator)[0] in \
-                            getattr(self.command_params[p], 'aliases', [p]):
-                        _param = self.command_params[p]
+        for _ in self.partLength:
+            _text, _str = self.getNextData(self.separator, pop=False)
+            if not (_param := self.commandParams.get(_text, None) if _str else Ellipsis) and _text != "":
+                for p in self.commandParams:
+                    if _text.split(self.commandParams[p].separator)[0] in \
+                            getattr(self.commandParams[p], 'aliases', [p]):
+                        _param = self.commandParams[p]
                         break
             try:
                 if not _param or _param is Ellipsis:
                     if not self.main_args:
-                        self.main_args = analyse_args(
-                            self, self.self_args, self.separator, self.alconna.nargs, self.alconna.action
+                        self.main_args = analyseArgs(
+                            self, self.selfArgs, self.separator, self.alconna.nargs, self.alconna.action
                         )
                 elif isinstance(_param, Option):
                     if _param.name == "--help":
-                        _record = self.current_index, self.content_index
-                        _help_param = self.recover_raw_data()
+                        _record = self.currentIndex, self.contentIndex
+                        _help_param = self.recoverRawData()
                         _help_param[0] = _help_param[0].replace("--help", "", 1).lstrip()
                         self.current_index, self.content_index = _record
 
                         def _get_help():
                             visitor = AlconnaNodeVisitor(self.alconna)
-                            return visitor.format_node(
+                            return visitor.formatNode(
                                 self.alconna.formatter,
                                 visitor.require(_help_param)
                             )
 
-                        _param.action = help_send(
+                        _param.action = helpSend(
                             self.alconna.name, _get_help
                         )
-                        analyse_option(self, _param)
-                        return self.create_arpamar(fail=True)
-                    opt_n, opt_v = analyse_option(self, _param)
+                        analyseOption(self, _param)
+                        return self.createArpamar(fail=True)
+                    opt_n, opt_v = analyseOption(self, _param)
                     if not self.options.get(opt_n, None):
                         self.options[opt_n] = opt_v
                     elif isinstance(self.options[opt_n], dict):
@@ -150,54 +150,54 @@ class GraiaCommandAnalyser(Analyser):
                         self.options[opt_n].append(opt_v)
 
                 elif isinstance(_param, Subcommand):
-                    sub_n, sub_v = analyse_subcommand(self, _param)
+                    sub_n, sub_v = analyseSubcommand(self, _param)
                     self.subcommands[sub_n] = sub_v
 
             except (ParamsUnmatched, ArgumentMissing):
-                if self.is_raise_exception:
+                if self.isRaiseException:
                     raise
-                return self.create_arpamar(fail=True)
-            if self.current_index == self.ndata:
+                return self.createArpamar(fail=True)
+            if self.currentIndex == self.ndata:
                 break
 
         # 防止主参数的默认值被忽略
-        if self.default_main_only and not self.main_args:
-            self.main_args = analyse_args(
-                self, self.self_args,
+        if self.isMainArgsDefaultOnly and not self.main_args:
+            self.main_args = analyseArgs(
+                self, self.selfArgs,
                 self.separator, self.alconna.nargs, self.alconna.action
             )
 
-        if self.current_index == self.ndata and (not self.need_main_args or (self.need_main_args and self.main_args)):
-            return self.create_arpamar()
+        if self.currentIndex == self.ndata and (not self.isNeedMainArgs or (self.isNeedMainArgs and self.main_args)):
+            return self.createArpamar()
 
-        data_len = self.rest_count(self.separator)
+        data_len = self.getRestDataCount(self.separator)
         if data_len > 0:
-            exc = ParamsUnmatched("Unmatched params: {}".format(self.next_data(self.separator, pop=False)[0]))
+            exc = ParamsUnmatched("Unmatched params: {}".format(self.getNextData(self.separator, pop=False)[0]))
         else:
             exc = ArgumentMissing("You need more data to analyse!")
-        if self.is_raise_exception:
+        if self.isRaiseException:
             raise exc
-        return self.create_arpamar(fail=True, exception=exc)
+        return self.createArpamar(fail=True, exception=exc)
 
-    def create_arpamar(self, exception: Optional[BaseException] = None, fail: bool = False):
+    def createArpamar(self, exception: Optional[BaseException] = None, fail: bool = False):
         result = Arpamar()
-        result.head_matched = self.head_matched
+        result.headMatched = self.headMatched
         if fail:
             tb = traceback.format_exc(limit=1)
-            result.error_info = repr(exception) or repr(tb)
-            result.error_data = self.recover_raw_data()
+            result.errorInfo = repr(exception) or repr(tb)
+            result.errorData = self.recoverRawData()
             result.matched = False
         else:
             result.matched = True
-            result.encapsulate_result(self.header, self.main_args, self.options, self.subcommands)
+            result.encapsulateResult(self.header, self.main_args, self.options, self.subcommands)
         self.reset()
         return result
 
 
-GraiaCommandAnalyser.add_arg_handler(MultiArg, multi_arg_handler)
-GraiaCommandAnalyser.add_arg_handler(AntiArg, anti_arg_handler)
-GraiaCommandAnalyser.add_arg_handler(UnionArg, union_arg_handler)
-GraiaCommandAnalyser.add_arg_handler(ArgPattern, common_arg_handler)
-GraiaCommandAnalyser.add_arg_handler(ObjectPattern, common_arg_handler)
-GraiaCommandAnalyser.add_arg_handler(SequenceArg, common_arg_handler)
-GraiaCommandAnalyser.add_arg_handler(MappingArg, common_arg_handler)
+GraiaCommandAnalyser.addArgHandler(MultiArg, multiArgHandler)
+GraiaCommandAnalyser.addArgHandler(AntiArg, antiArgHandler)
+GraiaCommandAnalyser.addArgHandler(UnionArg, unionArgHandler)
+GraiaCommandAnalyser.addArgHandler(ArgPattern, commonArgHandler)
+GraiaCommandAnalyser.addArgHandler(ObjectPattern, commonArgHandler)
+GraiaCommandAnalyser.addArgHandler(SequenceArg, commonArgHandler)
+GraiaCommandAnalyser.addArgHandler(MappingArg, commonArgHandler)

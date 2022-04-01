@@ -18,7 +18,7 @@ class DefaultHelpTextFormatter(AbstractHelpTextFormatter):
             if isinstance(parameter['value'], _AnyParam):
                 arg += f"{_sep}WildMatch"
             elif isinstance(parameter['value'], ArgPattern):
-                arg += f"{_sep}{parameter['value'].alias or parameter['value'].origin_type.__name__}"
+                arg += f"{_sep}{parameter['value'].alias or parameter['value'].originType.__name__}"
             else:
                 try:
                     arg += f"{_sep}Type_{parameter['value'].__name__}"
@@ -53,8 +53,8 @@ class DefaultHelpTextFormatter(AbstractHelpTextFormatter):
             if headers_text else root['name'] + root['separator']
         return f"{command_string}{self.parameters(root['parameters'], root['separator'])}{help_string}"
 
-    def part(self, sub: Dict[str, Any], node_type: str) -> str:
-        if node_type == 'option':
+    def part(self, sub: Dict[str, Any], nodeType: str) -> str:
+        if nodeType == 'option':
             aliases = sub['additional_info'].get('aliases')
             alias_text = ", ".join(aliases)
             return (
@@ -62,7 +62,7 @@ class DefaultHelpTextFormatter(AbstractHelpTextFormatter):
                 f"  {alias_text}{sub['separator']}"
                 f"{self.parameters(sub['parameters'], sub['separator'])}\n"
             )
-        elif node_type == 'subcommand':
+        elif nodeType == 'subcommand':
             option_string = "".join([self.part(i, 'option').replace("\n", "\n ") for i in sub['sub_nodes']])
             option_help = "## 该子命令内可用的选项有:\n " if option_string else ""
             return (
@@ -72,7 +72,7 @@ class DefaultHelpTextFormatter(AbstractHelpTextFormatter):
                 f"{option_help}{option_string}"
             )
         else:
-            return f"unknown node type:{node_type}"
+            return f"unknown node type:{nodeType}"
 
     def body(self, parts: List[Dict[str, Any]]) -> str:
         option_string = "".join(
@@ -112,7 +112,7 @@ class ArgParserHelpTextFormatter(AbstractHelpTextFormatter):
             if isinstance(parameter['value'], _AnyParam):
                 arg += f"{_sep}WildMatch"
             elif isinstance(parameter['value'], ArgPattern):
-                arg += f"{_sep}{parameter['value'].alias or parameter['value'].origin_type.__name__}"
+                arg += f"{_sep}{parameter['value'].alias or parameter['value'].originType.__name__}"
             else:
                 try:
                     arg += f"{_sep}Type_{parameter['value'].__name__}"
@@ -147,8 +147,8 @@ class ArgParserHelpTextFormatter(AbstractHelpTextFormatter):
             if headers_text else root['name'] + root['separator']
         return f"{help_string}命令: {command_string}{self.parameters(root['parameters'], root['separator'])}\n"
 
-    def part(self, sub: Dict[str, Any], node_type: str) -> str:
-        if node_type == 'option':
+    def part(self, sub: Dict[str, Any], nodeType: str) -> str:
+        if nodeType == 'option':
             aliases = sub['additional_info'].get('aliases')
             alias_text = ", ".join(aliases)
             return (
@@ -156,7 +156,7 @@ class ArgParserHelpTextFormatter(AbstractHelpTextFormatter):
                 f"  {alias_text}{sub['separator']}"
                 f"{self.parameters(sub['parameters'], sub['separator'])}\n"
             )
-        elif node_type == 'subcommand':
+        elif nodeType == 'subcommand':
             option_string = "".join([self.part(i, 'option').replace("\n", "\n ") for i in sub['sub_nodes']])
             option_help = "## 该子命令内可用的选项有:\n " if option_string else ""
             return (
@@ -166,7 +166,7 @@ class ArgParserHelpTextFormatter(AbstractHelpTextFormatter):
                 f"{option_help}{option_string}"
             )
         else:
-            return f"unknown node type:{node_type}"
+            return f"unknown node type:{nodeType}"
 
     def body(self, parts: List[Dict[str, Any]]) -> str:
         option_string = ""

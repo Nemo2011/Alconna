@@ -19,16 +19,16 @@ class AlconnaDuplication:
     def header(self):
         return self.__target.header
 
-    def set_target(self, target: 'Arpamar'):
+    def setTarget(self, target: 'Arpamar'):
         self.__target = target
         if self.__stubs__.get("main_args"):
-            getattr(self, self.__stubs__["main_args"]).set_result(target.main_args)  # type: ignore
+            getattr(self, self.__stubs__["main_args"]).setResult(target.mainArgs)  # type: ignore
         for key in self.__stubs__["options"]:
             if key in target.options:
-                getattr(self, key).set_result(target.options[key])
+                getattr(self, key).setResult(target.options[key])
         for key in self.__stubs__["subcommands"]:
             if key in target.options:
-                getattr(self, key).set_result(target.subcommands[key])
+                getattr(self, key).setResult(target.subcommands[key])
         return self
 
     def __init__(self, alconna: 'Alconna'):
@@ -61,7 +61,7 @@ class AlconnaDuplication:
         return cast(SubcommandStub, getattr(self, name, None))
 
 
-def generate_duplication(command: "Alconna") -> AlconnaDuplication:
+def generateDuplication(command: "Alconna") -> AlconnaDuplication:
     options = filter(lambda x: isinstance(x, Option), command.options)
     subcommands = filter(lambda x: isinstance(x, Subcommand), command.options)
     return cast(AlconnaDuplication, type(

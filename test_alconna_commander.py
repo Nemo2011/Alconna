@@ -51,7 +51,7 @@ class Commander:
             for k, v in self.command_parsers.items():
                 result = v.alconna.analyse_message(message)
                 if result.matched:
-                    await v.exec(result.all_matched_args)
+                    await v.exec(result.allMatchedArgs)
                     break
 
 

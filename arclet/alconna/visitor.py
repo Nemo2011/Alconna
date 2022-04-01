@@ -43,7 +43,7 @@ class AbstractHelpTextFormatter(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def part(self, sub: Dict[str, Any], node_type: str) -> str:
+    def part(self, sub: Dict[str, Any], nodeType: str) -> str:
         """
         每个子节点的描述
         """
@@ -61,29 +61,29 @@ class _BaseNode:
     """
     存储命令节点信息的基础类
     """
-    node_id: int
+    nodeId: int
     type: str
     name: str
     parameters: List[Dict[str, Any]]
     description: str
     separator: str
-    sub_nodes: List[int]
-    additional_info: Dict[str, Any]
+    subNodes: List[int]
+    additionalInfo: Dict[str, Any]
 
     def __init__(self, nid: int, target: CommandNode, node_type: Literal['command', 'subcommand', 'option']):
-        self.node_id = nid
+        self.nodeId = nid
         self.type = node_type
         self.name = target.name
-        self.description = target.help_text
+        self.description = target.helpText
         self.parameters = []
         self.separator = target.separator
-        self.additional_info = {}
+        self.additionalInfo = {}
         for key, arg in target.args.argument.items():
             self.parameters.append({'name': key, **arg})
-        self.sub_nodes = []
+        self.subNodes = []
 
     def __repr__(self):
-        res = f'[{self.name}, {self.description}; {self.parameters}; {self.sub_nodes}]'
+        res = f'[{self.name}, {self.description}; {self.parameters}; {self.subNodes}]'
         return res
 
 
@@ -91,46 +91,46 @@ class AlconnaNodeVisitor:
     """
     命令节点访问器
     """
-    name_list: List[str]
-    node_map: Dict[int, _BaseNode]
+    nameList: List[str]
+    nodeMap: Dict[int, _BaseNode]
 
     def __init__(self, alconna: "Alconna") -> None:
-        self.name_list = [alconna.name]
-        self.node_map = {0: _BaseNode(0, alconna, 'command')}
-        self.node_map[0].additional_info['command'] = alconna.command
-        self.node_map[0].additional_info['headers'] = alconna.headers
-        self.node_map[0].additional_info['namespace'] = alconna.namespace
+        self.nameList = [alconna.name]
+        self.nodeMap = {0: _BaseNode(0, alconna, 'command')}
+        self.nodeMap[0].additionalInfo['command'] = alconna.command
+        self.nodeMap[0].additionalInfo['headers'] = alconna.headers
+        self.nodeMap[0].additionalInfo['namespace'] = alconna.namespace
 
         for node in alconna.options:
             real_name = node.name.lstrip('-')
             if isinstance(node, Option):
-                if "option:" + real_name in self.name_list:
+                if "option:" + real_name in self.nameList:
                     raise DuplicateCommand("该选项已经存在")
-                self.name_list.append("option:" + real_name)
+                self.nameList.append("option:" + real_name)
             elif isinstance(node, Subcommand):
-                if "subcommand:" + real_name in self.name_list:
+                if "subcommand:" + real_name in self.nameList:
                     raise DuplicateCommand("该子命令已经存在")
-                self.name_list.append("subcommand:" + real_name)
-            new_id = max(self.node_map) + 1
+                self.nameList.append("subcommand:" + real_name)
+            new_id = max(self.nodeMap) + 1
             if isinstance(node, Subcommand):
-                self.node_map[new_id] = _BaseNode(new_id, node, 'subcommand')
+                self.nodeMap[new_id] = _BaseNode(new_id, node, 'subcommand')
                 for sub_node in node.options:
                     real_sub_name = sub_node.name.lstrip('-')
-                    if "subcommand:" + real_name + real_sub_name in self.name_list:
+                    if "subcommand:" + real_name + real_sub_name in self.nameList:
                         raise DuplicateCommand("该子命令选项已经存在")
-                    self.name_list.append(f"subcommand:{real_name}:{real_sub_name}")
-                    sub_new_id = max(self.node_map) + 1
-                    self.node_map[sub_new_id] = _BaseNode(sub_new_id, sub_node, 'option')
-                    self.node_map[sub_new_id].additional_info['aliases'] = sub_node.aliases
-                    self.node_map[new_id].sub_nodes.append(sub_new_id)
+                    self.nameList.append(f"subcommand:{real_name}:{real_sub_name}")
+                    sub_new_id = max(self.nodeMap) + 1
+                    self.nodeMap[sub_new_id] = _BaseNode(sub_new_id, sub_node, 'option')
+                    self.nodeMap[sub_new_id].additionalInfo['aliases'] = sub_node.aliases
+                    self.nodeMap[new_id].subNodes.append(sub_new_id)
             else:
-                self.node_map[new_id] = _BaseNode(new_id, node, 'option')
-                self.node_map[new_id].additional_info['aliases'] = node.aliases
-            self.node_map[0].sub_nodes.append(new_id)
+                self.nodeMap[new_id] = _BaseNode(new_id, node, 'option')
+                self.nodeMap[new_id].additionalInfo['aliases'] = node.aliases
+            self.nodeMap[0].subNodes.append(new_id)
 
     def require(self, path: Optional[Union[str, List[str]]] = None) -> _BaseNode:
         _cache_name = ""
-        _cache_node = self.node_map[0]
+        _cache_node = self.nodeMap[0]
         if path is None:
             return _cache_node
         if isinstance(path, str):
@@ -141,20 +141,20 @@ class AlconnaNodeVisitor:
                 continue
             if _cache_name:
                 _cache_name = _cache_name + ':' + part
-                if _cache_name in self.name_list:
-                    _cache_node = self.node_map[self.name_list.index(_cache_name)]
+                if _cache_name in self.nameList:
+                    _cache_node = self.nodeMap[self.nameList.index(_cache_name)]
             else:
-                if 'option:' + part in self.name_list and 'subcommand:' + part in self.name_list:
+                if 'option:' + part in self.nameList and 'subcommand:' + part in self.nameList:
                     raise ValueError("该名称存在歧义, 请指定具体的选项或子命令")
-                if "subcommand:" + part in self.name_list:
+                if "subcommand:" + part in self.nameList:
                     _cache_name = "subcommand:" + part
-                    _cache_node = self.node_map[self.name_list.index(_cache_name)]
-                elif "option:" + part in self.name_list:
+                    _cache_node = self.nodeMap[self.nameList.index(_cache_name)]
+                elif "option:" + part in self.nameList:
                     _cache_name = "option:" + part
-                    _cache_node = self.node_map[self.name_list.index(_cache_name)]
+                    _cache_node = self.nodeMap[self.nameList.index(_cache_name)]
         return _cache_node
 
-    def trace_nodes(self, root: _BaseNode):
+    def traceNodes(self, root: _BaseNode):
         """
         跟踪所有的节点
         """
@@ -164,11 +164,11 @@ class AlconnaNodeVisitor:
             "description": root.description,
             "parameters": root.parameters,
             "separator": root.separator,
-            "additional_info": root.additional_info,
-            "sub_nodes": [self.trace_nodes(self.node_map[i]) for i in root.sub_nodes]
+            "additional_info": root.additionalInfo,
+            "sub_nodes": [self.traceNodes(self.nodeMap[i]) for i in root.subNodes]
         }
 
-    def format_node(self, formatter: AbstractHelpTextFormatter, node: Optional[_BaseNode] = None) -> str:
+    def formatNode(self, formatter: AbstractHelpTextFormatter, node: Optional[_BaseNode] = None) -> str:
         if not node:
-            node = self.node_map[0]
-        return formatter.format(self.trace_nodes(node))
+            node = self.nodeMap[0]
+        return formatter.format(self.traceNodes(node))

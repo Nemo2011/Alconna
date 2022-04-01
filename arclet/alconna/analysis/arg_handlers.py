@@ -6,51 +6,51 @@ from .analyser import Analyser
 from ..exceptions import ParamsUnmatched, ArgumentMissing
 
 
-def multi_arg_handler(
+def multiArgHandler(
         analyser: Analyser,
-        may_arg: Union[str, DataUnit],
+        mayArg: Union[str, DataUnit],
         key: str,
         value: MultiArg,
         default: Any,
         nargs: int,
         sep: str,
-        result_dict: Dict[str, Any],
+        resultDict: Dict[str, Any],
         optional: bool
 ):
-    _m_arg_base = value.arg_value
+    _m_arg_base = value.argValue
     if _m_arg_base.__class__ is ArgPattern:
-        if not isinstance(may_arg, str):
+        if not isinstance(mayArg, str):
             return
-    elif isinstance(may_arg, str):
+    elif isinstance(mayArg, str):
         return
     # 当前args 已经解析 m 个参数， 总共需要 n 个参数，总共剩余p个参数，
     # q = n - m 为剩余需要参数（包括自己）， p - q + 1 为自己可能需要的参数个数
-    _m_rest_arg = nargs - len(result_dict) - 1
-    _m_all_args_count = analyser.rest_count(sep) - _m_rest_arg + 1
-    analyser.reduce_data(may_arg)
+    _m_rest_arg = nargs - len(resultDict) - 1
+    _m_all_args_count = analyser.getRestDataCount(sep) - _m_rest_arg + 1
+    analyser.reduceData(mayArg)
     if value.flag == 'args':
         result = []
 
         def __putback(data):
-            analyser.reduce_data(data)
+            analyser.reduceData(data)
             for ii in range(min(len(result), _m_rest_arg)):
-                analyser.reduce_data(result.pop(-1))
+                analyser.reduceData(result.pop(-1))
 
         for i in range(_m_all_args_count):
-            _m_arg, _m_str = analyser.next_data(sep)
-            if _m_str and _m_arg in analyser.param_ids:
+            _m_arg, _m_str = analyser.getNextData(sep)
+            if _m_str and _m_arg in analyser.paramIds:
                 __putback(_m_arg)
                 break
             if _m_arg_base.__class__ is ArgPattern:
                 if not _m_str:
-                    analyser.reduce_data(_m_arg)
+                    analyser.reduceData(_m_arg)
                     break
                 _m_arg_find = _m_arg_base.find(_m_arg)
                 if not _m_arg_find:
-                    analyser.reduce_data(_m_arg)
+                    analyser.reduceData(_m_arg)
                     break
                 if _m_arg_base.token == PatternToken.REGEX_TRANSFORM and isinstance(_m_arg_find, str):
-                    _m_arg_find = _m_arg_base.transform_action(_m_arg_find)
+                    _m_arg_find = _m_arg_base.transformAction(_m_arg_find)
                 if _m_arg_find == _m_arg_base.pattern:
                     _m_arg_find = Ellipsis
                 result.append(_m_arg_find)
@@ -60,43 +60,43 @@ def multi_arg_handler(
                     break
                 if _m_arg.__class__ is _m_arg_base:
                     result.append(_m_arg)
-                elif isinstance(value, type) and isinstance(may_arg, value):
+                elif isinstance(value, type) and isinstance(mayArg, value):
                     result.append(_m_arg)
                 else:
-                    analyser.reduce_data(_m_arg)
+                    analyser.reduceData(_m_arg)
                     break
         if len(result) == 0:
             result = [default] if default else []
-        result_dict[key] = tuple(result)
+        resultDict[key] = tuple(result)
     else:
         result = {}
 
         def __putback(data):
-            analyser.reduce_data(data)
+            analyser.reduceData(data)
             for ii in range(min(len(result), _m_rest_arg)):
                 arg = result.popitem()  # type: ignore
-                analyser.reduce_data(arg[0] + '=' + arg[1])
+                analyser.reduceData(arg[0] + '=' + arg[1])
 
         for i in range(_m_all_args_count):
-            _m_arg, _m_str = analyser.next_data(sep)
-            if _m_str and _m_arg in analyser.command_params:
+            _m_arg, _m_str = analyser.getNextData(sep)
+            if _m_str and _m_arg in analyser.commandParams:
                 __putback(_m_arg)
                 break
             if _m_arg_base.__class__ is ArgPattern:
                 if not _m_str:
-                    analyser.reduce_data(_m_arg)
+                    analyser.reduceData(_m_arg)
                     break
                 _kwarg = re.findall(r'^(.*)=(.*)$', _m_arg)
                 if not _kwarg:
-                    analyser.reduce_data(_m_arg)
+                    analyser.reduceData(_m_arg)
                     break
                 _key, _m_arg = _kwarg[0]
                 _m_arg_find = _m_arg_base.find(_m_arg)
                 if not _m_arg_find:
-                    analyser.reduce_data(_m_arg)
+                    analyser.reduceData(_m_arg)
                     break
                 if _m_arg_base.token == PatternToken.REGEX_TRANSFORM and isinstance(_m_arg_find, str):
-                    _m_arg_find = _m_arg_base.transform_action(_m_arg_find)
+                    _m_arg_find = _m_arg_base.transformAction(_m_arg_find)
                 if _m_arg_find == _m_arg_base.pattern:
                     _m_arg_find = Ellipsis
                 result[_key] = _m_arg_find
@@ -107,97 +107,97 @@ def multi_arg_handler(
                         __putback(_m_arg)
                         break
                     _key = _kwarg[0]
-                    _m_arg, _m_str = analyser.next_data(sep)
+                    _m_arg, _m_str = analyser.getNextData(sep)
                     if _m_str:
                         __putback(_m_arg)
                         break
                     if _m_arg.__class__ is _m_arg_base:
                         result[_key] = _m_arg
-                    elif isinstance(value, type) and isinstance(may_arg, value):
+                    elif isinstance(value, type) and isinstance(mayArg, value):
                         result[_key] = _m_arg
                     else:
-                        analyser.reduce_data(_m_arg)
+                        analyser.reduceData(_m_arg)
                         break
                 else:
-                    analyser.reduce_data(_m_arg)
+                    analyser.reduceData(_m_arg)
                     break
         if len(result) == 0:
             result = [default] if default else []
-        result_dict[key] = result
+        resultDict[key] = result
 
 
-def anti_arg_handler(
+def antiArgHandler(
         analyser: Analyser,
-        may_arg: Union[str, DataUnit],
+        mayArg: Union[str, DataUnit],
         key: str,
         value: AntiArg,
         default: Any,
         nargs: int,
         sep: str,
-        result_dict: Dict[str, Any],
+        resultDict: Dict[str, Any],
         optional: bool
 ):
-    _a_arg_base = value.arg_value
+    _a_arg_base = value.argValue
     if _a_arg_base.__class__ is ArgPattern:
-        arg_find = _a_arg_base.find(may_arg)
+        arg_find = _a_arg_base.find(mayArg)
         if not arg_find:   # and isinstance(may_arg, str):
-            result_dict[key] = may_arg
+            resultDict[key] = mayArg
         else:
-            analyser.reduce_data(may_arg)
+            analyser.reduceData(mayArg)
             if default is None:
                 if optional:
                     return
-                raise ParamsUnmatched(f"param {may_arg} is incorrect")
-            result_dict[key] = None if default is Empty else default
+                raise ParamsUnmatched(f"param {mayArg} is incorrect")
+            resultDict[key] = None if default is Empty else default
     else:
-        if may_arg.__class__ is not _a_arg_base:
-            result_dict[key] = may_arg
+        if mayArg.__class__ is not _a_arg_base:
+            resultDict[key] = mayArg
         elif default is not None:
-            result_dict[key] = None if default is Empty else default
-            analyser.reduce_data(may_arg)
+            resultDict[key] = None if default is Empty else default
+            analyser.reduceData(mayArg)
         else:
-            analyser.reduce_data(may_arg)
+            analyser.reduceData(mayArg)
             if optional:
                 return
-            if may_arg:
-                raise ParamsUnmatched(f"param type {may_arg.__class__} is incorrect")
+            if mayArg:
+                raise ParamsUnmatched(f"param type {mayArg.__class__} is incorrect")
             else:
                 raise ArgumentMissing(f"param {key} is required")
 
 
-def union_arg_handler(
+def unionArgHandler(
         analyser: Analyser,
-        may_arg: Union[str, DataUnit],
+        mayArg: Union[str, DataUnit],
         key: str,
         value: UnionArg,
         default: Any,
         nargs: int,
         sep: str,
-        result_dict: Dict[str, Any],
+        resultDict: Dict[str, Any],
         optional: bool
 ):
     if not value.anti:
         not_equal = True
         not_match = True
         not_check = True
-        if may_arg in value.for_equal:
+        if mayArg in value.forEqual:
             not_equal = False
 
         if not_equal:
-            for pat in value.for_match:
-                if arg_find := pat.find(may_arg):
+            for pat in value.forMatch:
+                if arg_find := pat.find(mayArg):
                     not_match = False
-                    may_arg = arg_find
+                    mayArg = arg_find
                     if isinstance(pat, TypePattern):
                         break
-                    if pat.token == PatternToken.REGEX_TRANSFORM and isinstance(may_arg, str):
-                        may_arg = pat.transform_action(may_arg)
-                    if may_arg == pat.pattern:
-                        may_arg = Ellipsis  # type: ignore
+                    if pat.token == PatternToken.REGEX_TRANSFORM and isinstance(mayArg, str):
+                        mayArg = pat.transformAction(mayArg)
+                    if mayArg == pat.pattern:
+                        mayArg = Ellipsis  # type: ignore
                     break
         if not_match:
-            for t in value.for_type_check:
-                if isinstance(may_arg, t):
+            for t in value.forTypeCheck:
+                if isinstance(mayArg, t):
                     not_check = False
                     break
         result = all([not_equal, not_match, not_check])
@@ -205,57 +205,57 @@ def union_arg_handler(
         equal = False
         match = False
         type_check = False
-        if may_arg in value.for_equal:
+        if mayArg in value.forEqual:
             equal = True
-        for pat in value.for_match:
-            if pat.find(may_arg):
+        for pat in value.forMatch:
+            if pat.find(mayArg):
                 match = True
                 break
-        for t in value.for_type_check:
-            if isinstance(may_arg, t):
+        for t in value.forTypeCheck:
+            if isinstance(mayArg, t):
                 type_check = True
                 break
 
         result = any([equal, match, type_check])
 
     if result:
-        analyser.reduce_data(may_arg)
+        analyser.reduceData(mayArg)
         if default is None:
             if optional:
                 return
-            if may_arg:
-                raise ParamsUnmatched(f"param {may_arg} is incorrect")
+            if mayArg:
+                raise ParamsUnmatched(f"param {mayArg} is incorrect")
             else:
                 raise ArgumentMissing(f"param {key} is required")
-        may_arg = None if default is Empty else default  # type: ignore
-    result_dict[key] = may_arg
+        mayArg = None if default is Empty else default  # type: ignore
+    resultDict[key] = mayArg
 
 
-def common_arg_handler(
+def commonArgHandler(
         analyser: Analyser,
-        may_arg: Union[str, DataUnit],
+        mayArg: Union[str, DataUnit],
         key: str,
         value: ArgPattern,
         default: Any,
         nargs: int,
         sep: str,
-        result_dict: Dict[str, Any],
+        resultDict: Dict[str, Any],
         optional: bool
 ):
-    arg_find = value.find(may_arg)
+    arg_find = value.find(mayArg)
     if not arg_find:
-        analyser.reduce_data(may_arg)
+        analyser.reduceData(mayArg)
         if default is None:
             if optional:
                 return
-            if may_arg:
-                raise ParamsUnmatched(f"param {may_arg} is incorrect")
+            if mayArg:
+                raise ParamsUnmatched(f"param {mayArg} is incorrect")
             else:
                 raise ArgumentMissing(f"param {key} is required")
         else:
             arg_find = None if default is Empty else default
     if value.token == PatternToken.REGEX_TRANSFORM and isinstance(arg_find, str):
-        arg_find = value.transform_action(arg_find)
+        arg_find = value.transformAction(arg_find)
     if arg_find == value.pattern:
         arg_find = Ellipsis
-    result_dict[key] = arg_find
+    resultDict[key] = arg_find

@@ -4,12 +4,15 @@
 
 </div>
 
-![Alconna](https://img.shields.io/badge/Arclet-Alconna-2564c2.svg)
+![Alconna](https://img.shields.io/badge/NeverGonna-GiveYouUp-2564c2.svg)
 ![latest release](https://img.shields.io/github/release/ArcletProject/Alconna)
 [![Licence](https://img.shields.io/github/license/ArcletProject/Alconna)](https://github.com/ArcletProject/Alconna/blob/master/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/arclet-alconna)](https://pypi.org/project/arclet-alconna)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/arclet-alconna)](https://www.python.org/)
 
+> 经过一番大彻大悟，我发现python的代码规范实在是一言难尽, 于是我决定把Alconna代码全部修改一遍
+> 
+> 具体内容看这里: [链接](https://b23.tv/g49y0K)
 
 `Alconna` 隶属于`ArcletProject`， 是 `Cesloi-CommandAnalysis` 的高级版，
 支持解析消息链或者其他原始消息数据
@@ -25,9 +28,7 @@ pip install --upgrade arclet-alconna
 
 ## 文档
 
-文档链接: [👉指路](https://arcletproject.github.io/docs/alconna/tutorial)
-
-相关文档: [📚文档](https://graiax.cn/make_ero_bot/tutorials/6_4_alconna.html#_6-4-0-%E5%87%A1%E4%BA%8B%E9%83%BD%E8%A6%81%E5%85%88%E5%AE%89%E8%A3%85)
+文档链接: [👉指路](https://y.music.163.com/m/song?app_version=8.1.70&id=5221167&userid=3269267634)
 
 ## 简单使用
 ```python

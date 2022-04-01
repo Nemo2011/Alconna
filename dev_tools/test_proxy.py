@@ -6,12 +6,12 @@ def test(something):
     print(something)
     print(something.origin)
     print(something.result)
-    print(something.help_text)
+    print(something.helpText)
 
 
 class Test(AlconnaMessageProxy):
 
-    async def fetch_message(self):
+    async def fetchMessage(self):
         yield "test --foo"
         yield "test --help foo"
         yield "test --help foo"
@@ -20,7 +20,7 @@ class Test(AlconnaMessageProxy):
 alc = AlconnaString("test  #测试命令", "--foo #测试选项")
 proxy = Test()
 
-proxy.add_proxy("test")
+proxy.addProxy("test")
 
 
 async def main():

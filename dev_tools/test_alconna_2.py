@@ -3,15 +3,15 @@ from typing import Union, Dict
 from arclet.alconna.builtin.construct import AlconnaString, AlconnaFormat
 from arclet.alconna.types import AnyStr, AnyDigit, ArgPattern, PatternToken
 from arclet.alconna import Alconna, Args, Option
-from arclet.alconna import command_manager
+from arclet.alconna import commandManager
 from devtools import debug
 
-print(command_manager)
+print(commandManager)
 
 ping = "Test" @ AlconnaString("ping <url:url>")
 ping1 = AlconnaString("ping <url:url>")
 
-Alconna.set_custom_types(digit=int)
+Alconna.setCustomTypes(digit=int)
 alc = AlconnaFormat(
     "lp user {target} perm set {perm} {default}",
     {"target": AnyStr, "perm": AnyStr, "default": Args["de":bool:True]},
@@ -45,20 +45,20 @@ alc1 = Alconna("test5", action=test)
 
 print(alc1)
 
-test_type = ArgPattern(r"(\[.*?])", token=PatternToken.REGEX_TRANSFORM, origin_type=list)
+test_type = ArgPattern(r"(\[.*?])", token=PatternToken.REGEX_TRANSFORM, originType=list)
 
-alc2 = Alconna("test", help_text="测试help直接发送") + Option("foo", Args["bar":str, "bar1":int:12345, "bar2":test_type])
+alc2 = Alconna("test", helpText="测试help直接发送") + Option("foo", Args["bar":str, "bar1":int:12345, "bar2":test_type])
 print(alc2.parse("test --help"))
 
-dic = alc1.to_dict()
+dic = alc1.toDict()
 
 debug(dic)
 
 dic['command'] = 'test_type_1'
 
-alc3 = Alconna.from_dict(dic)
+alc3 = Alconna.fromDict(dic)
 print(alc3)
-print(alc3.get_help())
+print(alc3.getHelp())
 print(alc3.parse("test_type_1 abcd 'testing a text' 2"))
 
 alc4 = Alconna(
@@ -73,29 +73,29 @@ print(alc4.parse("test_multi --foo ab --bar 1"))
 alc4.shortcut("st", "test_multi --foo ab --bar 1")
 result = alc4.parse("st")
 print(result)
-print(result.get_first_arg("foo"))
+print(result.getFirstArg("foo"))
 
 alc5 = Alconna("test_anti", "!path:int")
 print(alc5.parse("test_anti a"))
 
-alc6 = Alconna("test_union", main_args=Args.path[Union[int, float, 'abc']])
+alc6 = Alconna("test_union", mainArgs=Args.path[Union[int, float, 'abc']])
 print(alc6.parse("test_union abc"))
 
-alc7 = Alconna("test_list", main_args=Args.seq[list])
+alc7 = Alconna("test_list", mainArgs=Args.seq[list])
 print(alc7)
 print(alc7.parse("test_list \"['1', '2', '3']\""))
 
-alc8 = Alconna("test_dict", main_args=Args.map[Dict[str, int]])
+alc8 = Alconna("test_dict", mainArgs=Args.map[Dict[str, int]])
 print(alc8)
 print(alc8.parse("test_dict \"{'a':1, 'b':2}\""))
 
-alc9 = Alconna("test_str", main_args="@foo:str, bar:list, ?baz:int")
+alc9 = Alconna("test_str", mainArgs="@foo:str, bar:list, ?baz:int")
 print(alc9)
 print(alc9.parse("test_str foo=a \"[1]\""))
 
-alc10 = Alconna("test_bool", main_args="?_foo:str")
+alc10 = Alconna("test_bool", mainArgs="?_foo:str")
 print(alc10.parse(["test_bool", 1]))
-print(alc10.get_help())
+print(alc10.getHelp())
 
 alc11 = Alconna("test_header", headers=[(1234, "abc")])
 print("alc11:", alc11.parse([1234, "abctest_header"]))

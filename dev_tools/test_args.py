@@ -2,12 +2,12 @@ import time
 from typing import Union
 
 from arclet.alconna import Args, AnyFloat
-from arclet.alconna.analysis import analyse_args
+from arclet.alconna.analysis import analyseArgs
 
 print("\nArgs KVWord construct:")
 arg = Args(pak=str, upgrade=bool).default(upgrade=True)
 print("arg:", arg)
-print(analyse_args(arg, "arclet-alconna True"))
+print(analyseArgs(arg, "arclet-alconna True"))
 
 print("\nArgs Magic construct:")
 arg1 = Args["round":AnyFloat, "test":bool:True]["aaa":str] << Args["perm":str:...] + ["month", int]
@@ -19,50 +19,50 @@ print("arg11:", arg11)
 print("\nArgs Feature: Default value")
 arg2 = Args["foo":int, "de":bool:True]
 print("arg2:", arg2)
-print(analyse_args(arg2, "123 False"))
-print(analyse_args(arg2, "123"))
+print(analyseArgs(arg2, "123 False"))
+print(analyseArgs(arg2, "123"))
 
 print("\nArgs Feature: Choice")
 arg3 = Args["choice":("a", "b", "c")]
 print("arg3:", arg3)
-print(analyse_args(arg3, "a"))  # OK
+print(analyseArgs(arg3, "a"))  # OK
 time.sleep(0.1)
-print(analyse_args(arg3, "d"))  # error
+print(analyseArgs(arg3, "d"))  # error
 
 print("\nArgs Feature: Multi")
 arg4 = Args["*multi":str]
 print("arg4:", arg4)
-print(analyse_args(arg4, "a b c d"))
+print(analyseArgs(arg4, "a b c d"))
 arg44 = Args["**kwargs":str]
 print("arg44:", arg44)
-print(analyse_args(arg44, "a=b c=d"))
+print(analyseArgs(arg44, "a=b c=d"))
 
 print("\nArgs Feature: Anti")
 arg5 = Args["!anti":r"(.+?)/(.+?)\.py"]
 print("arg5:", arg5)
-print(analyse_args(arg5, "a/b.mp3"))  # OK
+print(analyseArgs(arg5, "a/b.mp3"))  # OK
 time.sleep(0.1)
-print(analyse_args(arg5, "a/b.py"))  # error
+print(analyseArgs(arg5, "a/b.py"))  # error
 
 print("\nArgs Feature: Union")
 arg6 = Args["bar":Union[float, int]]
 print("arg6:", arg6)
-print(analyse_args(arg6, "1.2"))  # OK
+print(analyseArgs(arg6, "1.2"))  # OK
 time.sleep(0.1)
-print(analyse_args(arg6, "1"))  # OK
+print(analyseArgs(arg6, "1"))  # OK
 
 print("\nArgs Feature: Force")
 arg7 = Args["#bar":bool]
 print("arg7:", arg7)
-print(analyse_args(arg7, "True"))  # error
+print(analyseArgs(arg7, "True"))  # error
 
 print("\nArgs Feature: Optional")
 arg8 = Args["?bar":int]
 print("arg8:", arg8)
-print(analyse_args(arg8, "abc"))  # OK
+print(analyseArgs(arg8, "abc"))  # OK
 
 print("\nArgs Feature: KWord")
 arg9 = Args["@bar":int]
 print("arg9:", arg9)
-print(analyse_args(arg9, "bar=123"))  # OK
-print(analyse_args(arg9, "123"))  # error
+print(analyseArgs(arg9, "bar=123"))  # OK
+print(analyseArgs(arg9, "123"))  # error

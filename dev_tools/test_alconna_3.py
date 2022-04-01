@@ -14,7 +14,7 @@ c1 = AlconnaDecorate(loop=loop)
 c2 = AlconnaDecorate(loop=loop)
 
 
-@c1.set_default_parser
+@c1.setDefaultParser
 def _(func, args, l_args, loo):
     class _D(BaseDispatcher):
         async def catch(self, interface: DispatcherInterface):
@@ -32,7 +32,7 @@ def _(func, args, l_args, loo):
 bcc = Broadcast(loop=loop)
 
 
-@c2.set_default_parser
+@c2.setDefaultParser
 def _(func, args, l_args, loo):
     loo.run_until_complete(
         await_exec_target(
@@ -42,7 +42,7 @@ def _(func, args, l_args, loo):
     )
 
 
-@c1.build_command()
+@c1.buildCommand()
 @c1.option("--count", Args["num":int], help="Test Option Count")
 @c1.option("--foo", Args["bar":str], help="Test Option Foo")
 def hello(bar: str, num: int = 1):
@@ -50,7 +50,7 @@ def hello(bar: str, num: int = 1):
     print(bar * num)
 
 
-@c2.build_command("halo")
+@c2.buildCommand("halo")
 @c2.option("--count", Args["num":int], help="Test Option Count")
 @c2.option("--foo", Args["bar":str], help="Test Option Foo")
 def halo(bar: str, num: int = 1):

@@ -4,7 +4,7 @@ import asyncio
 from arclet.alconna.arpamar import Arpamar
 from arclet.alconna import Alconna
 from arclet.alconna.proxy import AlconnaMessageProxy, AlconnaProperty
-from arclet.alconna.manager import command_manager
+from arclet.alconna.manager import commandManager
 
 from graia.broadcast.entities.event import Dispatchable
 from graia.broadcast.exceptions import ExecutionStop
@@ -21,20 +21,20 @@ from graia.ariadne.util import resolve_dispatchers_mixin
 
 
 class AriadneAMP(AlconnaMessageProxy):
-    pre_treatments: Dict[Alconna, Callable[[MessageChain, Arpamar, Optional[str]], AlconnaProperty]]
+    preTreatments: Dict[Alconna, Callable[[MessageChain, Arpamar, Optional[str]], AlconnaProperty]]
 
-    def add_proxy(
+    def addProxy(
             self,
             command: Union[str, Alconna],
-            pre_treatment: Optional[
+            preTreatment: Optional[
                 Callable[[MessageChain, Arpamar, Optional[str]], Coroutine[None, None, AlconnaProperty]]
             ] = None,
     ):
         if isinstance(command, str):
-            command = command_manager.get_command(command)
-        self.pre_treatments.setdefault(command, pre_treatment or self.default_pre_treatment)
+            command = commandManager.getCommand(command)
+        self.pre_treatments.setdefault(command, preTreatment or self.defaultPreTreatment)
 
-    async def fetch_message(self) -> AsyncIterator[MessageChain]:
+    async def fetchMessage(self) -> AsyncIterator[MessageChain]:
         pass
 
 
@@ -123,12 +123,12 @@ class AlconnaDispatcher(BaseDispatcher):
             return AlconnaProperty(origin, result, help_text)
 
         message = await interface.lookup_param("message", MessageChain, None)
-        self.proxy.add_proxy(self.command, reply_help_message)
-        self.proxy.push_message(message)
+        self.proxy.addProxy(self.command, reply_help_message)
+        self.proxy.pushMessage(message)
 
     async def catch(self, interface: DispatcherInterface):
         res = await self.proxy.export(self.command)
-        if not res.result.matched and not res.help_text:
+        if not res.result.matched and not res.helpText:
             if "-h" in str(res.origin):
                 raise ExecutionStop
             if self.skip_for_unmatch:

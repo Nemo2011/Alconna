@@ -1,13 +1,13 @@
 from arclet.alconna import Alconna, Args, Option
 from arclet.alconna.arpamar import ArpamarBehavior, ArpamarBehaviorInterface
-from arclet.alconna.builtin.actions import set_default, exclusion, cool_down
+from arclet.alconna.builtin.actions import setDefault, exclusion, coolDown
 import time
 
 
 class Test(ArpamarBehavior):
     def operate(self, interface: "ArpamarBehaviorInterface"):
         print(interface.require("options.foo"))
-        interface.change_const("matched", False)
+        interface.changeConst("matched", False)
 
 
 alc = Alconna(
@@ -15,8 +15,8 @@ alc = Alconna(
     options=[
         Option("foo"),
     ],
-    main_args=Args["bar":int],
-    behaviors=[set_default(321, option="foo"), Test()],
+    mainArgs=Args["bar":int],
+    behaviors=[setDefault(321, option="foo"), Test()],
 )
 print(alc.parse(["command", "123"]))
 
@@ -32,8 +32,8 @@ print(alc1.parse("test_exclusion\nfoo"))
 
 alc2 = Alconna(
     "test_cool_down",
-    main_args=Args["bar":int],
-    behaviors=[cool_down(0.2)]
+    mainArgs=Args["bar":int],
+    behaviors=[coolDown(0.2)]
 )
 for i in range(4):
     time.sleep(0.1)

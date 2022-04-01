@@ -16,7 +16,7 @@ class BaseStub(metaclass=ABCMeta):
     __ignore__ = ['available', 'value', '_origin', 'origin', '__ignore__']
 
     @abstractmethod
-    def set_result(self, result: Any) -> None:
+    def setResult(self, result: Any) -> None:
         """
         设置解析结果与可用性
         """
@@ -42,13 +42,13 @@ class ArgsStub(BaseStub):
             if isinstance(value['value'], _AnyParam):
                 self.__annotations__[key] = Any
             elif isinstance(value['value'], ArgPattern):
-                self.__annotations__[key] = value['value'].origin_type
+                self.__annotations__[key] = value['value'].originType
             else:
                 self.__annotations__[key] = value['value']
             setattr(self, key, value['default'])
         self.available = False
 
-    def set_result(self, result: Dict[str, Any]):
+    def setResult(self, result: Dict[str, Any]):
         if result:
             self._args_result = result
             self.available = True
@@ -58,7 +58,7 @@ class ArgsStub(BaseStub):
         return self._origin
 
     @property
-    def first_arg(self) -> Any:
+    def firstArg(self) -> Any:
         return self.__getitem__(0)
 
     def get(self, item: Union[str, Type[T]], default=None) -> Union[T, Any]:
@@ -114,9 +114,9 @@ class OptionStub(BaseStub):
         self.available = False
         self.value = None
 
-    def set_result(self, result: Any):
+    def setResult(self, result: Any):
         if isinstance(result, Dict):
-            self.args.set_result(result)
+            self.args.setResult(result)
         else:
             self.value = result
         self.available = True
@@ -140,16 +140,16 @@ class SubcommandStub(BaseStub):
         self.value = None
         self._origin = subcommand
 
-    def set_result(self, result: Any):
+    def setResult(self, result: Any):
         result = result.copy()
         if isinstance(result, Dict):
             keys = list(result.keys())
             for key in keys:
                 for opt in self.options:
                     if opt.name == key:
-                        opt.set_result(result.pop(key))
+                        opt.setResult(result.pop(key))
                         break
-            self.args.set_result(result)
+            self.args.setResult(result)
         else:
             self.value = result
         self.available = True

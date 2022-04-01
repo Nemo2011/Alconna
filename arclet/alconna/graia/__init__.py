@@ -10,4 +10,4 @@ from arclet.alconna import Alconna
 from .analyser import GraiaCommandAnalyser
 from .dispatcher import AlconnaDispatcher, AlconnaHelpMessage
 
-Alconna.default_analyser = GraiaCommandAnalyser
+Alconna.defaultAnalyser = GraiaCommandAnalyser

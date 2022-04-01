@@ -7,7 +7,7 @@ from .component import Option, Subcommand
 from .arpamar import Arpamar, ArpamarBehavior
 from .arpamar.duplication import AlconnaDuplication
 from .types import DataCollection, DataUnit
-from .manager import command_manager
+from .manager import commandManager
 from .visitor import AlconnaNodeVisitor, AbstractHelpTextFormatter
 from .builtin.formatter import DefaultHelpTextFormatter
 from .builtin.analyser import DisorderCommandAnalyser
@@ -35,7 +35,7 @@ class Alconna(CommandNode):
     ...             args=Args["sub_main_args":"sub_main_args"]
     ...         )
     ...     ],
-    ...     main_args=Args["main_args":"main_args"],
+    ...     mainArgs=Args["main_args":"main_args"],
     ...  )
     >>> alc.parse("name opt opt_arg")
 
@@ -54,25 +54,25 @@ class Alconna(CommandNode):
     headers: Union[List[Union[str, DataUnit]], List[Tuple[DataUnit, str]]]  # type: ignore
     command: str
     options: List[Union[Option, Subcommand]]
-    analyser_type: Type[Analyser]
-    custom_types: Dict[str, Type] = {}
+    analyserType: Type[Analyser]
+    customTypes: Dict[str, Type] = {}
     namespace: str
-    __cls_name__: str = "Alconna"
-    local_args: dict = {}
+    __clsName__: str = "Alconna"
+    localArgs: dict = {}
     formatter: AbstractHelpTextFormatter
-    default_analyser: Type[Analyser] = DisorderCommandAnalyser  # type: ignore
+    defaultAnalyser: Type[Analyser] = DisorderCommandAnalyser  # type: ignore
 
     def __init__(
             self,
             command: Optional[str] = None,
-            main_args: Union[Args, str, None] = None,
+            mainArgs: Union[Args, str, None] = None,
             headers: Optional[Union[List[Union[str, DataUnit]], List[Tuple[DataUnit, str]]]] = None,
             options: Optional[List[Union[Option, Subcommand]]] = None,
-            is_raise_exception: bool = False,
+            isRaiseException: bool = False,
             action: Optional[Union[ArgAction, Callable]] = None,
             namespace: Optional[str] = None,
             separator: str = " ",
-            help_text: Optional[str] = None,
+            helpText: Optional[str] = None,
             analyser_type: Optional[Type[Analyser]] = None,
             behaviors: Optional[List[ArpamarBehavior]] = None,
             formatter: Optional[AbstractHelpTextFormatter] = None,
@@ -84,12 +84,12 @@ class Alconna(CommandNode):
             headers: 呼叫该命令的命令头，一般是你的机器人的名字或者符号，与 command 至少有一个填写
             command: 命令名称，你的命令的名字，与 headers 至少有一个填写
             options: 命令选项，你的命令可选择的所有 option ，包括子命令与单独的选项
-            main_args: 主参数，填入后当且仅当命令中含有该参数时才会成功解析
-            is_raise_exception: 当解析失败时是否抛出异常，默认为 False
+            mainArgs: 主参数，填入后当且仅当命令中含有该参数时才会成功解析
+            isRaiseException: 当解析失败时是否抛出异常，默认为 False
             action: 命令解析后针对主参数的回调函数
             namespace: 命令命名空间，默认为 'Alconna'
             separator: 命令参数分隔符，默认为空格
-            help_text: 帮助文档，默认为 'Unknown Information'
+            helpText: 帮助文档，默认为 'Unknown Information'
             analyser_type: 命令解析器类型，默认为 DisorderCommandAnalyser
         """
         # headers与command二者必须有其一
@@ -100,48 +100,48 @@ class Alconna(CommandNode):
         self.options = options or []
         super().__init__(
             f"ALCONNA::{command or self.headers[0]}",
-            main_args,
+            mainArgs,
             action,
             separator,
-            help_text or "Unknown Information"
+            helpText or "Unknown Information"
         )
-        self.is_raise_exception = is_raise_exception
-        self.namespace = namespace or self.__cls_name__
-        self.options.append(Option("--help", alias=["-h"], help_text="显示帮助信息"))
-        self.analyser_type = analyser_type or self.default_analyser
-        command_manager.register(self)
-        self.__class__.__cls_name__ = "Alconna"
+        self.isRaiseException = isRaiseException
+        self.namespace = namespace or self.__clsName__
+        self.options.append(Option("--help", alias=["-h"], helpText="显示帮助信息"))
+        self.analyserType = analyser_type or self.defaultAnalyser
+        commandManager.register(self)
+        self.__class__.__clsName__ = "Alconna"
         self.behaviors = behaviors
         self.formatter = formatter or DefaultHelpTextFormatter()  # type: ignore
 
     def __class_getitem__(cls, item):
         if isinstance(item, str):
-            cls.__cls_name__ = item
+            cls.__clsName__ = item
         return cls
 
-    def reset_namespace(self, namespace: str):
+    def resetNamespace(self, namespace: str):
         """重新设置命名空间"""
-        command_manager.delete(self)
+        commandManager.delete(self)
         self.namespace = namespace
-        command_manager.register(self)
+        commandManager.register(self)
         return self
 
-    def reset_behaviors(self, behaviors: List[ArpamarBehavior]):
+    def resetBehaviors(self, behaviors: List[ArpamarBehavior]):
         self.behaviors = behaviors
         return self
 
-    def get_help(self) -> str:
+    def getHelp(self) -> str:
         """返回 help 文档"""
-        return AlconnaNodeVisitor(self).format_node(self.formatter)
+        return AlconnaNodeVisitor(self).formatNode(self.formatter)
 
     @classmethod
-    def set_custom_types(cls, **types: Type):
+    def setCustomTypes(cls, **types: Type):
         """设置自定义类型"""
-        cls.custom_types = types
+        cls.customTypes = types
 
-    def shortcut(self, short_key: str, command: str, reserve_args: bool = False):
+    def shortcut(self, shortKey: str, command: str, reserveArgs: bool = False):
         """添加快捷键"""
-        command_manager.add_shortcut(self, short_key, command, reserve_args)
+        commandManager.addShortcut(self, shortKey, command, reserveArgs)
 
     def __repr__(self):
         return (
@@ -154,22 +154,22 @@ class Alconna(CommandNode):
             name: str,
             sep: str = " ",
             args: Optional[Args] = None,
-            help_text: Optional[str] = None,
+            helpText: Optional[str] = None,
     ):
         """链式注册一个 Option"""
-        command_manager.delete(self)
-        opt = Option(name, args, separator=sep, help_text=help_text)
+        commandManager.delete(self)
+        opt = Option(name, args, separator=sep, helpText=helpText)
         self.options.append(opt)
-        command_manager.register(self)
+        commandManager.register(self)
         return self
 
-    def set_action(self, action: Union[Callable, str, ArgAction], custom_types: Optional[Dict[str, Type]] = None):
+    def setAction(self, action: Union[Callable, str, ArgAction], customTypes: Optional[Dict[str, Type]] = None):
         """设置针对main_args的action"""
         if isinstance(action, str):
             ns = {}
-            exec(action, getattr(self, "custom_types", custom_types), ns)
+            exec(action, getattr(self, "custom_types", customTypes), ns)
             action = ns.popitem()[1]
-        self.__check_action__(action)
+        self.__checkAction__(action)
         return self
 
     @overload
@@ -198,87 +198,87 @@ class Alconna(CommandNode):
     ):
         """命令分析功能, 传入字符串或消息链, 返回一个特定的数据集合类"""
         if static:
-            analyser = command_manager.require(self)
+            analyser = commandManager.require(self)
         else:
             analyser = compile(self)
-        result = analyser.handle_message(message)
+        result = analyser.handleMessage(message)
         if duplication:
             arp = (result or analyser.analyse()).update(self.behaviors)
-            dup = duplication(self).set_target(arp)
+            dup = duplication(self).setTarget(arp)
             return dup
         return (result or analyser.analyse()).update(self.behaviors)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def toDict(self) -> Dict[str, Any]:
         """转换为字典"""
         return {
             "headers": self.headers,
             "command": self.command,
-            "options": [opt.to_dict() for opt in self.options if opt.name != "--help"],
-            "main_args": self.args.to_dict(),
-            "is_raise_exception": self.is_raise_exception,
+            "options": [opt.toDict() for opt in self.options if opt.name != "--help"],
+            "main_args": self.args.toDict(),
+            "is_raise_exception": self.isRaiseException,
             "separator": self.separator,
             "namespace": self.namespace,
-            "help_text": self.help_text,
+            "help_text": self.helpText,
         }
 
     def __truediv__(self, other):
-        self.reset_namespace(other)
+        self.resetNamespace(other)
         return self
 
     def __rtruediv__(self, other):
-        self.reset_namespace(other)
+        self.resetNamespace(other)
         return self
 
     def __rmatmul__(self, other):
-        self.reset_namespace(other)
+        self.resetNamespace(other)
         return self
 
     def __matmul__(self, other):
-        self.reset_namespace(other)
+        self.resetNamespace(other)
         return self
 
     def __radd__(self, other):
         if isinstance(other, Option):
-            command_manager.delete(self)
+            commandManager.delete(self)
             self.options.append(other)
-            command_manager.register(self)
+            commandManager.register(self)
         return self
 
     def __add__(self, other):
         return self.__radd__(other)
 
     def __getstate__(self):
-        return self.to_dict()
+        return self.toDict()
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Alconna":
+    def fromDict(cls, data: Dict[str, Any]) -> "Alconna":
         """从字典中恢复一个 Alconna 对象"""
         headers = data["headers"]
         command = data["command"]
         options = []
         for o in data["options"]:
             if o['type'] == 'Option':
-                options.append(Option.from_dict(o))
+                options.append(Option.fromDict(o))
             elif o['type'] == 'Subcommand':
-                options.append(Subcommand.from_dict(o))
-        main_args = Args.from_dict(data["main_args"])
+                options.append(Subcommand.fromDict(o))
+        main_args = Args.fromDict(data["main_args"])
         is_raise_exception = data["is_raise_exception"]
         namespace = data["namespace"]
         return cls(
-            command=command, options=options, main_args=main_args, headers=headers,
-            is_raise_exception=is_raise_exception, namespace=namespace,
-            separator=data["separator"], help_text=data["help_text"],
+            command=command, options=options, mainArgs=main_args, headers=headers,
+            isRaiseException=is_raise_exception, namespace=namespace,
+            separator=data["separator"], helpText=data["help_text"],
         )
 
     def __setstate__(self, state):
         options = []
         for o in state["options"]:
             if o['type'] == 'Option':
-                options.append(Option.from_dict(o))
+                options.append(Option.fromDict(o))
             elif o['type'] == 'Subcommand':
-                options.append(Subcommand.from_dict(o))
+                options.append(Subcommand.fromDict(o))
         self.__init__(
             headers=state["headers"], command=state["command"], options=options,
-            main_args=Args.from_dict(state["main_args"]), is_raise_exception=state["is_raise_exception"],
-            namespace=state["namespace"], separator=state["separator"], help_text=state["help_text"],
+            mainArgs=Args.fromDict(state["main_args"]), isRaiseException=state["is_raise_exception"],
+            namespace=state["namespace"], separator=state["separator"], helpText=state["help_text"],
         )

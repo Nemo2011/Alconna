@@ -23,7 +23,7 @@ a = Arpamar()
 ping = Alconna(
     headers=["."],
     command="test",
-    main_args=Args["bar":AnyParam]
+    mainArgs=Args["bar":AnyParam]
 )
 s_ping = compile(ping)
 

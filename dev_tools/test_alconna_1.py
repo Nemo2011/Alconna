@@ -22,47 +22,47 @@ ping = Alconna(
     command="ping",
     options=[
         Subcommand(
-            "test", [Option("-u", Args["username":str], help_text="输入用户名")], args=Args["test":"Test"],
-            help_text="测试用例"
+            "test", [Option("-u", Args["username":str], helpText="输入用户名")], args=Args["test":"Test"],
+            helpText="测试用例"
         ),
-        Option("-n|--num", Args["count":int:123], help_text="输入数字"),
-        Option("-u", Args(At=At), help_text="输入需要At的用户")
+        Option("-n|--num", Args["count":int:123], helpText="输入数字"),
+        Option("-u", Args(At=At), helpText="输入需要At的用户")
     ],
-    main_args=Args(IP=AnyIP),
-    help_text="简单的ping指令"
+    mainArgs=Args(IP=AnyIP),
+    helpText="简单的ping指令"
 )
-print(ping.get_help())
+print(ping.getHelp())
 msg = MessageChain.create("/ping -u", At(123), "test Test -u AAA -n 222 127.0.0.1")
 print(msg)
 print(ping.parse(msg))
 
 msg1 = MessageChain.create("/ping 127.0.0.1 -u", At(123))
 print(msg1)
-print(ping.parse(msg1).all_matched_args)
+print(ping.parse(msg1).allMatchedArgs)
 
 msg2 = MessageChain.create("/ping a")
 print(msg2)
 result = ping.parse(msg2)
 print(result.header)
-print(result.head_matched)
+print(result.headMatched)
 
 pip = Alconna(
     command="/pip",
     options=[
-        Subcommand("install", [Option("--upgrade", help_text="升级包")], Args["pak":str], help_text="安装一个包"),
-        Option("--retries", Args["retries":int], help_text="设置尝试次数"),
-        Option("-t| --timeout", Args["sec":int], help_text="设置超时时间"),
-        Option("--exists-action", Args["action":str], help_text="添加行为"),
-        Option("--trusted-host", Args["host_name":"url"], help_text="选择可信赖地址")
+        Subcommand("install", [Option("--upgrade", helpText="升级包")], Args["pak":str], helpText="安装一个包"),
+        Option("--retries", Args["retries":int], helpText="设置尝试次数"),
+        Option("-t| --timeout", Args["sec":int], helpText="设置超时时间"),
+        Option("--exists-action", Args["action":str], helpText="添加行为"),
+        Option("--trusted-host", Args["host_name":"url"], helpText="选择可信赖地址")
     ],
-    help_text="简单的pip指令"
+    helpText="简单的pip指令"
 )
-print(pip.get_help())
+print(pip.getHelp())
 msg = "/pip install ces --upgrade -t 6 --trusted-host http://pypi.douban.com/simple"
 print(msg)
-print(pip.parse(msg).all_matched_args)
+print(pip.parse(msg).allMatchedArgs)
 
-aaa = Alconna(headers=[".", "!"], command="摸一摸", main_args=Args["At":At])
+aaa = Alconna(headers=[".", "!"], command="摸一摸", mainArgs=Args["At":At])
 msg = MessageChain.create(".摸一摸", At(123))
 print(msg)
 print(aaa.parse(msg).matched)
@@ -70,12 +70,12 @@ print(aaa.parse(msg).matched)
 ccc = Alconna(
     headers=[""],
     command="4help",
-    main_args=Args["aaa":str],
+    mainArgs=Args["aaa":str],
 )
 msg = "4help 'what he say?'"
 print(msg)
 result = ccc.parse(msg)
-print(result.main_args)
+print(result.mainArgs)
 
 eee = Alconna(
     headers=[""],
@@ -116,17 +116,17 @@ ddd = Alconna(
                     "--round| -r",
                     args=Args(decimal=AnyDigit),
                     action=lambda x: x + "a",
-                    help_text="保留n位小数"
+                    helpText="保留n位小数"
                 )
             ],
             args=Args(num_a=AnyDigit, num_b=AnyDigit),
-            help_text="除法计算"
+            helpText="除法计算"
         )
     ],
 )
 msg = "Cal -div 12 23 --round 2"
 print(msg)
-print(ddd.get_help())
+print(ddd.getHelp())
 result = ddd.parse(msg)
 print(result.div)
 
@@ -140,7 +140,7 @@ ddd = Alconna(
 msg = "点歌 歌名：Freejia"
 print(msg)
 result = ddd.parse(msg, static=False)
-print(result.all_matched_args)
+print(result.allMatchedArgs)
 
 give = AlconnaString("give <sb:int:...> <sth:int:...>")
 print(give)
@@ -155,9 +155,9 @@ def test_act(content):
 wild = Alconna(
     headers=[At(12345)],
     command="丢漂流瓶",
-    main_args=Args["wild":AnyParam],
+    mainArgs=Args["wild":AnyParam],
     action=test_act,
-    help_text="丢漂流瓶"
+    helpText="丢漂流瓶"
 )
 # print(wild.parse("丢漂流瓶 aaa bbb ccc").all_matched_args)
 msg = MessageChain.create(At(12345), " 丢漂流瓶 aa\t\nvv")
@@ -165,23 +165,23 @@ print(wild.parse(msg))
 
 get_ap = Alconna(
     command="AP",
-    main_args=Args(type=str, text=str)
+    mainArgs=Args(type=str, text=str)
 )
 
 test = Alconna(
     command="test",
-    main_args=Args(t=Arpamar)
-).reset_namespace("TEST")
+    mainArgs=Args(t=Arpamar)
+).resetNamespace("TEST")
 print(test)
 print(test.parse(
     [get_ap.parse("AP Plain test"), get_ap.parse("AP At 123")]
-).all_matched_args)
+).allMatchedArgs)
 
 # print(command_manager.commands)
 
 double_default = Alconna(
     command="double",
-    main_args=Args(num=int).default(num=22),
+    mainArgs=Args(num=int).default(num=22),
     options=[
         Option("--d", Args(num1=int).default(num1=22))
     ]
@@ -192,11 +192,11 @@ print(result)
 
 choice = Alconna(
     command="choice",
-    main_args=Args["part":["a", "b", "c"]],
-    help_text="选择一个部分"
+    mainArgs=Args["part":["a", "b", "c"]],
+    helpText="选择一个部分"
 )
 print(choice.parse("choice d"))
-print(choice.get_help())
+print(choice.getHelp())
 
 sub = Alconna(
     command="test_sub_main",
@@ -208,7 +208,7 @@ sub = Alconna(
         )
     ]
 )
-print(sub.get_help())
+print(sub.getHelp())
 res = sub.parse("test_sub_main sub --subOption 123 a")
 print(res)
 print(res.sub.foo)

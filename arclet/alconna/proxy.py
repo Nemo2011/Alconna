@@ -7,17 +7,17 @@ from typing import Optional, Union, Callable, Dict, AsyncIterator, Coroutine, An
 from .types import DataCollection
 from .main import Alconna
 from .arpamar import Arpamar
-from .manager import command_manager
-from .builtin.actions import require_help_send_action
+from .manager import commandManager
+from .builtin.actions import requireHelpSendAction
 
 
 @lru_cache(4096)
-def iscoroutinefunction(o):
+def isCoroutineFunction(o):
     return inspect.iscoroutinefunction(o)
 
 
-async def run_always_await(callable_target, *args, **kwargs):
-    if iscoroutinefunction(callable_target):
+async def runAlwaysAwait(callable_target, *args, **kwargs):
+    if isCoroutineFunction(callable_target):
         return await callable_target(*args, **kwargs)
     return callable_target(*args, **kwargs)
 
@@ -32,20 +32,20 @@ class AlconnaProperty(Generic[T_Origin, T_Source]):
             self,
             origin: T_Origin,
             result: Arpamar,
-            help_text: Optional[str] = None,
+            helpText: Optional[str] = None,
             source: Optional[T_Source] = None,
     ):
         self.origin = origin
         self.result = result
-        self.help_text = help_text
+        self.helpText = helpText
         self.source = source
 
 
 class AlconnaMessageProxy(metaclass=abc.ABCMeta):
     """消息解析的代理"""
     loop: asyncio.AbstractEventLoop
-    export_results: Queue
-    pre_treatments: Dict[
+    exportResults: Queue
+    preTreatments: Dict[
         Alconna,
         Callable[
             [Union[str, DataCollection], Arpamar, Optional[str]],
@@ -55,14 +55,14 @@ class AlconnaMessageProxy(metaclass=abc.ABCMeta):
 
     def __init__(self, loop: Optional[asyncio.AbstractEventLoop] = None):
         self.loop = loop or asyncio.get_event_loop()
-        self.pre_treatments = {}
-        self.export_results = Queue()
-        self.default_pre_treatment = lambda o, r, h, s: AlconnaProperty(o, r, h, s)
+        self.preTreatments = {}
+        self.exportResults = Queue()
+        self.defaultPreTreatment = lambda o, r, h, s: AlconnaProperty(o, r, h, s)
 
-    def add_proxy(
+    def addProxy(
             self,
             command: Union[str, Alconna],
-            pre_treatment: Optional[
+            preTreatment: Optional[
                 Callable[
                     [Union[str, DataCollection], Arpamar, Optional[str]],
                     Union[
@@ -73,24 +73,24 @@ class AlconnaMessageProxy(metaclass=abc.ABCMeta):
             ] = None,
     ):
         if isinstance(command, str):
-            command = command_manager.get_command(command)  # type: ignore
+            command = commandManager.getCommand(command)  # type: ignore
             if not command:
                 raise ValueError(f'Command {command} not found')
-        self.pre_treatments.setdefault(command, pre_treatment or self.default_pre_treatment)  # type: ignore
+        self.preTreatments.setdefault(command, preTreatment or self.defaultPreTreatment)  # type: ignore
 
     @abc.abstractmethod
-    async def fetch_message(self) -> AsyncIterator[Tuple[Union[str, DataCollection], Any]]:
+    async def fetchMessage(self) -> AsyncIterator[Tuple[Union[str, DataCollection], Any]]:
         """主动拉取消息"""
         yield NotImplemented
         raise NotImplementedError
 
     @staticmethod
-    def later_condition(result: AlconnaProperty[Union[str, DataCollection], str]) -> bool:
-        if not result.result.matched and not result.help_text:
+    def laterCondition(result: AlconnaProperty[Union[str, DataCollection], str]) -> bool:
+        if not result.result.matched and not result.helpText:
             return False
         return True
 
-    async def push_message(
+    async def pushMessage(
             self,
             message: Union[str, DataCollection],
             source: Optional[Any] = None,
@@ -103,22 +103,22 @@ class AlconnaMessageProxy(metaclass=abc.ABCMeta):
                 nonlocal may_help_text
                 may_help_text = string
 
-            require_help_send_action(_h, _command.name)
+            requireHelpSendAction(_h, _command.name)
 
             _res = _command.parse(message)
-            _property = await run_always_await(_treatment, message, _res, may_help_text, source)
-            if not self.later_condition(_property):
+            _property = await runAlwaysAwait(_treatment, message, _res, may_help_text, source)
+            if not self.laterCondition(_property):
                 return
-            await self.export_results.put(_property)
-        if command and command in self.pre_treatments:
-            await __exec(command, self.pre_treatments[command])
+            await self.exportResults.put(_property)
+        if command and command in self.preTreatments:
+            await __exec(command, self.preTreatments[command])
         else:
-            for command, treatment in self.pre_treatments.items():
+            for command, treatment in self.preTreatments.items():
                 await __exec(command, treatment)
 
     async def run(self):
-        async for message, source in self.fetch_message():
-            await self.push_message(message, source)
+        async for message, source in self.fetchMessage():
+            await self.pushMessage(message, source)
 
-    def run_blocking(self):
+    def runBlocking(self):
         self.loop.run_until_complete(self.run())

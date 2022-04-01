@@ -4,7 +4,7 @@ import re
 import json
 
 from arclet.alconna import Alconna, Args, Arpamar, Option, AnyUrl, AnyIP, AnyDigit, AnyFloat, AllParam, Email, Bool, \
-    command_manager, all_command_help, alconna_version
+    commandManager, all_command_help, alconna_version
 from arclet.alconna.types import ArgPattern, PatternToken
 
 cache_data: Dict[str, Any] = {}
@@ -12,42 +12,42 @@ cache_data: Dict[str, Any] = {}
 args_type = ArgPattern(
     r"(\[.+])*",
     token=PatternToken.REGEX_TRANSFORM,
-    origin_type=list,
-    transform_action=lambda x: [re.split("[:|=]", p) for p in re.findall(r"\[(.*?)]", x)]
+    originType=list,
+    transformAction=lambda x: [re.split("[:|=]", p) for p in re.findall(r"\[(.*?)]", x)]
 )
 
 
 create = Alconna(
     command="create",
     options=[
-        Option("--command|-C", Args["command_name":str], help_text="指定命令名称"),
-        Option("--header|-H", Args["command_header":List[str]], help_text="传入命令头"),
-        Option("--option|-O", Args["option_name":str]["option_args":args_type:[]], help_text="创建命令选项"),
-        Option("--analysed|-A", help_text="从已经分析的命令结构中创建Alconna")
+        Option("--command|-C", Args["command_name":str], helpText="指定命令名称"),
+        Option("--header|-H", Args["command_header":List[str]], helpText="传入命令头"),
+        Option("--option|-O", Args["option_name":str]["option_args":args_type:[]], helpText="创建命令选项"),
+        Option("--analysed|-A", helpText="从已经分析的命令结构中创建Alconna")
     ],
     namespace="ALCLI",
-    help_text="开始创建 Alconna 命令"
+    helpText="开始创建 Alconna 命令"
 )
 
 analysis = Alconna(
     command="analysis",
-    main_args=Args["command":AllParam],
+    mainArgs=Args["command":AllParam],
     namespace="ALCLI",
-    help_text="分析命令并转换为 Alconna 命令结构"
+    helpText="分析命令并转换为 Alconna 命令结构"
 )
 
 help_find = Alconna(
     command="help",
-    main_args=Args["target":str],
+    mainArgs=Args["target":str],
     namespace="ALCLI",
-    help_text="展示指定Alconna组件的帮助信息"
+    helpText="展示指定Alconna组件的帮助信息"
 )
 
 using = Alconna(
     command="using",
-    main_args=Args["command":AllParam],
+    mainArgs=Args["command":AllParam],
     namespace="ALCLI",
-    help_text="依据创建的 Alconna 来解析输入的命令"
+    helpText="依据创建的 Alconna 来解析输入的命令"
 )
 
 
@@ -223,21 +223,21 @@ def command_using(arpamar: Arpamar):
         using_result
     )
     alc = using_result['alc']
-    alc.reset_namespace("ALCLI/USING")
+    alc.resetNamespace("ALCLI/USING")
     result = alc.parse(command[0])
     if result.matched:
         print(
             f"Your command is successfully matched!"
             f"\nThe results: "
             f"\n - Header: {result.header}"
-            f"\n - Command: {result.main_args}"
+            f"\n - Command: {result.mainArgs}"
             f"\n - Options: {result.options}"
-            f"\n - Arguments: {result.all_matched_args}"
+            f"\n - Arguments: {result.allMatchedArgs}"
         )
     else:
         print(
             f"Your command matched failed."
-            f"\nError Data: {result.error_data}"
+            f"\nError Data: {result.errorData}"
         )
 
 
@@ -263,7 +263,7 @@ def main(args=None):
     if text == "--help":
         print("* Alconna CL\n" + all_command_help("ALCLI"))
         return
-    for alc in command_manager.get_commands("ALCLI"):
+    for alc in commandManager.getCommands("ALCLI"):
         result = alc.parse(text)
         if result.matched:
             eval("command_" + alc.command)(result)

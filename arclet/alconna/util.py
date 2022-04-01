@@ -17,28 +17,28 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-def get_module_name() -> Optional[str]:
+def getModuleName() -> Optional[str]:
     """获取当前模块名"""
     for frame in stack():
         if name := frame.frame.f_locals.get("__name__"):
             return name
 
 
-def get_module_filename() -> Optional[str]:
+def getModuleFilename() -> Optional[str]:
     """获取当前模块的文件名"""
     for frame in stack():
         if frame.frame.f_locals.get("__name__"):
             return frame.filename.split("/")[-1].split(".")[0]
 
 
-def get_module_filepath() -> Optional[str]:
+def getModuleFilepath() -> Optional[str]:
     """获取当前模块的路径"""
     for frame in stack():
         if frame.frame.f_locals.get("__name__"):
             return ".".join(frame.filename.split("/")[1:]).replace('.py', '')
 
 
-def split_once(text: str, separate: str):  # 相当于另类的pop, 不会改变本来的字符串
+def splitOnce(text: str, separate: str):  # 相当于另类的pop, 不会改变本来的字符串
     """单次分隔字符串"""
     out_text = []
     quotation = ""
@@ -95,14 +95,14 @@ def split(text: str, separate: str = " ", ):
     return result
 
 
-def deprecated(remove_ver: str) -> Callable[[Callable[..., R]], Callable[..., R]]:
+def deprecated(removeVer: str) -> Callable[[Callable[..., R]], Callable[..., R]]:
     """标注一个方法 / 函数已被弃用"""
 
     def out_wrapper(func: Callable[..., R]) -> Callable[..., R]:
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> R:
-            warnings.warn("{} will be removed in {}!".format(func.__qualname__, remove_ver), DeprecationWarning, 2)
-            logging.warning(f"{func.__qualname__} will be removed in {remove_ver}!")
+            warnings.warn("{} will be removed in {}!".format(func.__qualname__, removeVer), DeprecationWarning, 2)
+            logging.warning(f"{func.__qualname__} will be removed in {removeVer}!")
             return func(*args, **kwargs)
 
         return wrapper
